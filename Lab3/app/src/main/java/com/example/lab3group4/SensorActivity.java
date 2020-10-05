@@ -341,9 +341,6 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
 
         if(!server){
             Float inData = new Float(0);
-            if(newData!=null){
-                inData = Float.valueOf(newData);
-            }
 
             if (sensorNumber == 1) {  // Accelerometer
 
@@ -354,12 +351,11 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                 float accelerationSquareRoot;
 
                 accelerationSquareRoot = (x * x + y * y + z * z) / (SensorManager.GRAVITY_EARTH * SensorManager.GRAVITY_EARTH);
-                if(dataThreadObject!=null){
+                if(dataThreadObject!=null) {
                     byte[] outData = Float.toString(accelerationSquareRoot).getBytes();
                     dataThreadObject.write(outData);
-                }else{
-                    inData = accelerationSquareRoot;
                 }
+                inData = accelerationSquareRoot;
 
                 // This if-statement is added in conjunction with the private variables: rest and oldSenseVal
                 // The purpose is to only keep the peak values when shaking phone
@@ -463,9 +459,8 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                 if(dataThreadObject!=null){
                     byte[] outData = Float.toString(x).getBytes();
                     dataThreadObject.write(outData);
-                }else{
-                    inData = x;
                 }
+                inData = x;
 
                 button4.setChecked(true);
                 if (inData*inData < 0.5) {  // Too small
@@ -514,9 +509,8 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                 if (dataThreadObject != null) {
                     byte[] outData = Float.toString(x).getBytes();
                     dataThreadObject.write(outData);
-                }else {
-                    inData = x;
                 }
+                inData = x;
 
                 if (inData < 2) {
                     button1.setChecked(true);
@@ -542,6 +536,171 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
 
     }
 
+    private class buttonsThread implements Runnable {
+        Float inData;
+
+        public buttonsThread(float data) {
+            inData = data;
+        }
+        @Override
+        public void run() {
+            if (sensorNumber == 1) {  // Accelerometer
+                if (rest && (oldSenseVal > inData)) {
+                    // Acceleration ranges of these if-statements were calibrated using a Galaxy S8
+                    if (inData <= 1) {
+                        button1.setChecked(false);
+                        button1.setChecked(false);
+                        button2.setChecked(false);
+                        button3.setChecked(false);
+                        button4.setChecked(false);
+                        button5.setChecked(false);
+                        button6.setChecked(false);
+                        button7.setChecked(false);
+                        rest = false;
+                    }
+                    if (inData > 1 && inData <= 2.5) {
+                        button1.setChecked(true);
+                        button2.setChecked(false);
+                        button3.setChecked(false);
+                        button4.setChecked(false);
+                        button5.setChecked(false);
+                        button6.setChecked(false);
+                        button7.setChecked(false);
+                        rest = false;
+                    }
+                    if (inData > 2.5 && inData <= 4) {
+                        button1.setChecked(true);
+                        button2.setChecked(true);
+                        button3.setChecked(false);
+                        button4.setChecked(false);
+                        button5.setChecked(false);
+                        button6.setChecked(false);
+                        button7.setChecked(false);
+                        rest = false;
+                    }
+                    if (inData > 4 && inData <= 5.5) {
+                        button1.setChecked(true);
+                        button2.setChecked(true);
+                        button3.setChecked(true);
+                        button4.setChecked(false);
+                        button5.setChecked(false);
+                        button6.setChecked(false);
+                        button7.setChecked(false);
+                        rest = false;
+                    }
+                    if (inData > 5.5 && inData <= 7) {
+                        button1.setChecked(true);
+                        button2.setChecked(true);
+                        button3.setChecked(true);
+                        button4.setChecked(true);
+                        button5.setChecked(false);
+                        button6.setChecked(false);
+                        button7.setChecked(false);
+                        rest = false;
+                    }
+                    if (inData > 7 && inData <= 8.5) {
+                        button1.setChecked(true);
+                        button2.setChecked(true);
+                        button3.setChecked(true);
+                        button4.setChecked(true);
+                        button5.setChecked(true);
+                        button6.setChecked(false);
+                        button7.setChecked(false);
+                        rest = false;
+                    }
+                    if (inData > 8.5 && inData <= 10) {
+                        button1.setChecked(true);
+                        button2.setChecked(true);
+                        button3.setChecked(true);
+                        button4.setChecked(true);
+                        button5.setChecked(true);
+                        button6.setChecked(true);
+                        button7.setChecked(false);
+                        rest = false;
+                    }
+                    if (inData > 10) {
+                        button1.setChecked(true);
+                        button2.setChecked(true);
+                        button3.setChecked(true);
+                        button4.setChecked(true);
+                        button5.setChecked(true);
+                        button6.setChecked(true);
+                        button7.setChecked(true);
+                        rest = false;
+                    }
+
+                }
+                oldSenseVal = inData;
+                //oldSenseVal = accelerationSquareRoot;
+
+            } else if (sensorNumber == 2) { // Gyroscope
+
+                button4.setChecked(true);
+                if (inData*inData < 0.5) {  // Too small
+                    return;
+                }
+                if (inData < -1) {
+                    button5.setChecked(true);
+                    button1.setChecked(false);
+                    button2.setChecked(false);
+                    button3.setChecked(false);
+                }
+                if (inData < -2) {
+                    button6.setChecked(true);
+                    button1.setChecked(false);
+                    button2.setChecked(false);
+                    button3.setChecked(false);
+                }
+                if (inData < -3) {
+                    button7.setChecked(true);
+                    button1.setChecked(false);
+                    button2.setChecked(false);
+                    button3.setChecked(false);
+                }
+                if (inData > 1) {
+                    button3.setChecked(true);
+                    button5.setChecked(false);
+                    button6.setChecked(false);
+                    button7.setChecked(false);
+                }
+                if (inData > 2) {
+                    button2.setChecked(true);
+                    button5.setChecked(false);
+                    button6.setChecked(false);
+                    button7.setChecked(false);
+                }
+                if (inData > 3) {
+                    button1.setChecked(true);
+                    button5.setChecked(false);
+                    button6.setChecked(false);
+                    button7.setChecked(false);
+                }
+            } else if (sensorNumber == 3) { // Proximity
+                if (inData < 2) {
+                    button1.setChecked(true);
+                    button2.setChecked(true);
+                    button3.setChecked(true);
+                    button4.setChecked(true);
+                    button5.setChecked(true);
+                    button6.setChecked(true);
+                    button7.setChecked(true);
+                } else {
+                    button1.setChecked(false);
+                    button2.setChecked(false);
+                    button3.setChecked(false);
+                    button4.setChecked(false);
+                    button5.setChecked(false);
+                    button6.setChecked(false);
+                    button7.setChecked(false);
+                }
+            } else { // Default - do nothing
+                ;
+            }
+        }
+    }
+
+
+
     // This function declaration is necessary to implement SensorEventListener
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
@@ -564,6 +723,7 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                     // MY_UUID is the app's UUID string, also used by the client code.
                     //REALLY NOT SURE THERE IS ANYTHING IN UUID[0]*****************
                     tmp = mBluetoothAdapter.listenUsingRfcommWithServiceRecord(name, uuid);
+                    Log.d("TAG", "Server thread is created successfully");
                 } catch (IOException e) {
                     Log.e(TAG, "Socket's listen() method failed", e);
                 }
@@ -624,6 +784,7 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                 // Get a BluetoothSocket to connect with the given BluetoothDevice.
                 // MY_UUID is the app's UUID string, also used in the server code.
                 tmp = device.createRfcommSocketToServiceRecord(uuid);
+                Log.d("TAG", "Client thread was created successfully");
             } catch (IOException e) {
                 Log.e(TAG, "Socket's create() method failed", e);
             }
@@ -683,11 +844,13 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
             // member streams are final.
             try {
                 tmpIn = socket.getInputStream();
+                Log.d(TAG, "Input Data stream created successfully");
             } catch (IOException e) {
                 Log.e(TAG, "Error occurred when creating input stream", e);
             }
             try {
                 tmpOut = socket.getOutputStream();
+                Log.d(TAG, "Output Data stream created successfully");
             } catch (IOException e) {
                 Log.e(TAG, "Error occurred when creating output stream", e);
             }
@@ -712,162 +875,13 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                     if(server){
                         Float inData = new Float(0);
                         if(newData!=null){
-                            inData = Float.valueOf(newData);
+                            inData = Float.valueOf(newData.substring(0, 7));
                         }
-                        if (sensorNumber == 1) {  // Accelerometer
-                            if (rest && (oldSenseVal > inData)) {
-                                // Acceleration ranges of these if-statements were calibrated using a Galaxy S8
-                                if (inData <= 1) {
-                                    button1.setChecked(false);
-                                    button2.setChecked(false);
-                                    button3.setChecked(false);
-                                    button4.setChecked(false);
-                                    button5.setChecked(false);
-                                    button6.setChecked(false);
-                                    button7.setChecked(false);
-                                    rest = false;
-                                }
-                                if (inData > 1 && inData <= 2.5) {
-                                    button1.setChecked(true);
-                                    button2.setChecked(false);
-                                    button3.setChecked(false);
-                                    button4.setChecked(false);
-                                    button5.setChecked(false);
-                                    button6.setChecked(false);
-                                    button7.setChecked(false);
-                                    rest = false;
-                                }
-                                if (inData > 2.5 && inData <= 4) {
-                                    button1.setChecked(true);
-                                    button2.setChecked(true);
-                                    button3.setChecked(false);
-                                    button4.setChecked(false);
-                                    button5.setChecked(false);
-                                    button6.setChecked(false);
-                                    button7.setChecked(false);
-                                    rest = false;
-                                }
-                                if (inData > 4 && inData <= 5.5) {
-                                    button1.setChecked(true);
-                                    button2.setChecked(true);
-                                    button3.setChecked(true);
-                                    button4.setChecked(false);
-                                    button5.setChecked(false);
-                                    button6.setChecked(false);
-                                    button7.setChecked(false);
-                                    rest = false;
-                                }
-                                if (inData > 5.5 && inData <= 7) {
-                                    button1.setChecked(true);
-                                    button2.setChecked(true);
-                                    button3.setChecked(true);
-                                    button4.setChecked(true);
-                                    button5.setChecked(false);
-                                    button6.setChecked(false);
-                                    button7.setChecked(false);
-                                    rest = false;
-                                }
-                                if (inData > 7 && inData <= 8.5) {
-                                    button1.setChecked(true);
-                                    button2.setChecked(true);
-                                    button3.setChecked(true);
-                                    button4.setChecked(true);
-                                    button5.setChecked(true);
-                                    button6.setChecked(false);
-                                    button7.setChecked(false);
-                                    rest = false;
-                                }
-                                if (inData > 8.5 && inData <= 10) {
-                                    button1.setChecked(true);
-                                    button2.setChecked(true);
-                                    button3.setChecked(true);
-                                    button4.setChecked(true);
-                                    button5.setChecked(true);
-                                    button6.setChecked(true);
-                                    button7.setChecked(false);
-                                    rest = false;
-                                }
-                                if (inData > 10) {
-                                    button1.setChecked(true);
-                                    button2.setChecked(true);
-                                    button3.setChecked(true);
-                                    button4.setChecked(true);
-                                    button5.setChecked(true);
-                                    button6.setChecked(true);
-                                    button7.setChecked(true);
-                                    rest = false;
-                                }
-
-                            }
-                            oldSenseVal = inData;
-                            //oldSenseVal = accelerationSquareRoot;
-
-                        } else if (sensorNumber == 2) { // Gyroscope
-
-                            button4.setChecked(true);
-                            if (inData*inData < 0.5) {  // Too small
-                                return;
-                            }
-                            if (inData < -1) {
-                                button5.setChecked(true);
-                                button1.setChecked(false);
-                                button2.setChecked(false);
-                                button3.setChecked(false);
-                            }
-                            if (inData < -2) {
-                                button6.setChecked(true);
-                                button1.setChecked(false);
-                                button2.setChecked(false);
-                                button3.setChecked(false);
-                            }
-                            if (inData < -3) {
-                                button7.setChecked(true);
-                                button1.setChecked(false);
-                                button2.setChecked(false);
-                                button3.setChecked(false);
-                            }
-                            if (inData > 1) {
-                                button3.setChecked(true);
-                                button5.setChecked(false);
-                                button6.setChecked(false);
-                                button7.setChecked(false);
-                            }
-                            if (inData > 2) {
-                                button2.setChecked(true);
-                                button5.setChecked(false);
-                                button6.setChecked(false);
-                                button7.setChecked(false);
-                            }
-                            if (inData > 3) {
-                                button1.setChecked(true);
-                                button5.setChecked(false);
-                                button6.setChecked(false);
-                                button7.setChecked(false);
-                            }
-                        } else if (sensorNumber == 3) { // Proximity
-                            if (inData < 2) {
-                                button1.setChecked(true);
-                                button2.setChecked(true);
-                                button3.setChecked(true);
-                                button4.setChecked(true);
-                                button5.setChecked(true);
-                                button6.setChecked(true);
-                                button7.setChecked(true);
-                            } else {
-                                button1.setChecked(false);
-                                button2.setChecked(false);
-                                button3.setChecked(false);
-                                button4.setChecked(false);
-                                button5.setChecked(false);
-                                button6.setChecked(false);
-                                button7.setChecked(false);
-                            }
-                        } else { // Default - do nothing
-                            ;
-                        }
+                        Log.d("TAG", "inData is" + newData.substring(0, 7));
+                        runOnUiThread(new buttonsThread(inData));
                     }
 
-                    Log.d(TAG, "Incoming data!! "+newData);
+                    Log.d(TAG, "Incoming data!! "+ newData);
                 } catch (IOException e) {
                     Log.d(TAG, "Input stream was disconnected", e);
                     break;
