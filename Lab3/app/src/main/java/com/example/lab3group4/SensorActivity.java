@@ -23,12 +23,14 @@ import android.widget.CompoundButton;
 import android.widget.ListView;
 import android.widget.RadioButton;
 import android.widget.Switch;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Set;
 import java.util.UUID;
 
 public class SensorActivity extends AppCompatActivity implements SensorEventListener {
@@ -44,6 +46,7 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
     private BluetoothAdapter mBluetoothAdapter;
     private ArrayList<BluetoothDevice> devices;
     private ArrayList<String> devicenames;
+    private Set<BluetoothDevice> pairedDevices;
     private ArrayAdapter adapter;
     ListView listView;
     UUID uuid = UUID.fromString("fcb71e62-125e-4910-94eb-52582e5105ef");
@@ -251,6 +254,22 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
         }
 
     }
+
+    public void list(View v) {
+        ListView deviceList = (ListView) findViewById(R.id.deviceList);
+        deviceList.setVisibility(View.VISIBLE);
+        pairedDevices = mBluetoothAdapter.getBondedDevices();
+
+        ArrayList list = new ArrayList();
+
+        for (BluetoothDevice bt : pairedDevices) list.add(bt.getName());
+        Toast.makeText(getApplicationContext(), "Showing Paired Devices", Toast.LENGTH_SHORT).show();
+
+        final ArrayAdapter adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, list);
+
+        listView.setAdapter(adapter);
+    }
+
 
 
     @Override
