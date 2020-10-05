@@ -120,13 +120,13 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                 devicenames.add(device.getName());
                 adapter.notifyDataSetInvalidated();
 
-
+                list(findViewById(R.id.discover_button));
             }
         }
     };
 
     public void clientStart(View view){
-        for (BluetoothDevice device:devices) {
+        for (BluetoothDevice device:mBluetoothAdapter.getBondedDevices()) {
             clientThread = new ConnectThread(device);
             clientThread.start();
         }
@@ -134,7 +134,7 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
     }
 
     public void serverStart(View view){
-        for (BluetoothDevice device:devices){
+        for (BluetoothDevice device:mBluetoothAdapter.getBondedDevices()){
             serverThread = new AcceptThread(device);
             serverThread.start();
         }
@@ -252,7 +252,8 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
             registerReceiver(mBroadcastReceiver3, filter);
             mBluetoothAdapter.startDiscovery();
         }
-
+        //update list view
+        list(view);
     }
 
     public void list(View v) {
