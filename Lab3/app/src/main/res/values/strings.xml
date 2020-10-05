@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Lab 3 Group 4</string>
+    <string name="textBox">Select the sensor you want to test</string>
+    <string name="button1Text">ACCELEROMETER</string>
+    <string name="button2Text">GYROSCOPE</string>
+    <string name="button3Text">PROXIMITY</string>
+    <string name="re_discover_devices">Re-discover devices</string>
+    <string name="connect_to_another_device">Connect to another device</string>
+    <string name="enabling_connection_will_discover_nearby_devices_for_30_seconds">Enabling connection will discover nearby devices for 30 seconds</string>
+</resources>
