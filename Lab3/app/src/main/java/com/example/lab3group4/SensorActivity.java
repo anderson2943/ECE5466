@@ -879,7 +879,7 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
 
                             int index1 = newString.lastIndexOf(".");
                             String[] splitData = new String[3];
-                            splitData[0] = newString.substring(index1-1,7);
+                            splitData[0] = newString.substring(index1-1,newString.length()-1);
                             newString = newString.substring(0, index1-2);
                             int index2 = newString.lastIndexOf(".");
                             splitData[1] = newString.substring(index2-1,index1-2);
