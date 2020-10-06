@@ -877,14 +877,14 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                         if(newData!=null){
                             String delims = "[.]";
                             String[] splitData = newData.split(delims);
-                            Float maxData = Float.parseFloat(splitData[0]);
+                            Float maxVal = Float.parseFloat(splitData[0]);
                             for (int i = 1; i < splitData.length; i++) {
-                                if (Float.parseFloat(splitData[i]) > maxData) {
-                                    maxData = Float.parseFloat(splitData[i]);
+                                if (Float.parseFloat(splitData[i]) > maxVal) {
+                                    maxVal = Float.parseFloat(splitData[i]);
                                 }
                             }
 
-                            inData = maxData;
+                            inData = maxVal;
                         }
                         Log.d("TAG", "inData is" + inData);
                         runOnUiThread(new buttonsThread(inData));
