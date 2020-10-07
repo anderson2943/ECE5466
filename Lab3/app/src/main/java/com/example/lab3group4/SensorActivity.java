@@ -545,6 +545,12 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
         @Override
         public void run() {
             if (sensorNumber == 1) {  // Accelerometer
+
+                if( inData < 1.5) {
+                    rest = true;
+                    return;
+                }
+
                 if (rest && (oldSenseVal > inData)) {
                     // Acceleration ranges of these if-statements were calibrated using a Galaxy S8
                     if (inData <= 1) {
@@ -556,6 +562,7 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                         button5.setChecked(false);
                         button6.setChecked(false);
                         button7.setChecked(false);
+                        rest = false;
                     }
                     if (inData > 1 && inData <= 2.5) {
                         button1.setChecked(true);
@@ -565,6 +572,7 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                         button5.setChecked(false);
                         button6.setChecked(false);
                         button7.setChecked(false);
+                        rest = false;
                     }
                     if (inData > 2.5 && inData <= 4) {
                         button1.setChecked(true);
@@ -574,6 +582,7 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                         button5.setChecked(false);
                         button6.setChecked(false);
                         button7.setChecked(false);
+                        rest = false;
                     }
                     if (inData > 4 && inData <= 5.5) {
                         button1.setChecked(true);
@@ -583,6 +592,7 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                         button5.setChecked(false);
                         button6.setChecked(false);
                         button7.setChecked(false);
+                        rest = false;
                     }
                     if (inData > 5.5 && inData <= 7) {
                         button1.setChecked(true);
@@ -592,6 +602,7 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                         button5.setChecked(false);
                         button6.setChecked(false);
                         button7.setChecked(false);
+                        rest = false;
                     }
                     if (inData > 7 && inData <= 8.5) {
                         button1.setChecked(true);
@@ -601,6 +612,7 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                         button5.setChecked(true);
                         button6.setChecked(false);
                         button7.setChecked(false);
+                        rest = false;
                     }
                     if (inData > 8.5 && inData <= 10) {
                         button1.setChecked(true);
@@ -610,6 +622,7 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                         button5.setChecked(true);
                         button6.setChecked(true);
                         button7.setChecked(false);
+                        rest = false;
                     }
                     if (inData > 10) {
                         button1.setChecked(true);
@@ -619,6 +632,7 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                         button5.setChecked(true);
                         button6.setChecked(true);
                         button7.setChecked(true);
+                        rest = false;
                     }
 
                 }
