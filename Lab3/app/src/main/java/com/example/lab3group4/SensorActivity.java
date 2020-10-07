@@ -875,8 +875,17 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                     if(server){
                         Float inData = new Float(0);
                         if(newData!=null){
-                            String newString = newData;
-
+                            String newString = new String(newData);
+                            Float maxVal = new Float(0);
+                            int index = newString.lastIndexOf(".");;
+                            while(index!=-1){
+                                Float temp = new Float(newString.substring(index-1));
+                                if(temp>maxVal){
+                                    maxVal = temp;
+                                }
+                                newString = newData.substring(0,index-1);
+                            }
+                            /*
                             int index1 = newString.lastIndexOf(".");
                             String[] splitData = new String[3];
                             splitData[0] = newString.substring(index1-1,newString.length()-1);
@@ -890,8 +899,7 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                                 if (Float.parseFloat(splitData[i]) > maxVal) {
                                     maxVal = Float.parseFloat(splitData[i]);
                                 }
-                            }
-
+                            }*/
                             inData = maxVal;
                         }
                         Log.d("TAG", "inData is" + inData);
