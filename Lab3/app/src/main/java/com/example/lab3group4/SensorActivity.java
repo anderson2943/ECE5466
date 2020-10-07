@@ -556,7 +556,6 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                         button5.setChecked(false);
                         button6.setChecked(false);
                         button7.setChecked(false);
-                        rest = false;
                     }
                     if (inData > 1 && inData <= 2.5) {
                         button1.setChecked(true);
@@ -566,7 +565,6 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                         button5.setChecked(false);
                         button6.setChecked(false);
                         button7.setChecked(false);
-                        rest = false;
                     }
                     if (inData > 2.5 && inData <= 4) {
                         button1.setChecked(true);
@@ -576,7 +574,6 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                         button5.setChecked(false);
                         button6.setChecked(false);
                         button7.setChecked(false);
-                        rest = false;
                     }
                     if (inData > 4 && inData <= 5.5) {
                         button1.setChecked(true);
@@ -586,7 +583,6 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                         button5.setChecked(false);
                         button6.setChecked(false);
                         button7.setChecked(false);
-                        rest = false;
                     }
                     if (inData > 5.5 && inData <= 7) {
                         button1.setChecked(true);
@@ -596,7 +592,6 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                         button5.setChecked(false);
                         button6.setChecked(false);
                         button7.setChecked(false);
-                        rest = false;
                     }
                     if (inData > 7 && inData <= 8.5) {
                         button1.setChecked(true);
@@ -606,7 +601,6 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                         button5.setChecked(true);
                         button6.setChecked(false);
                         button7.setChecked(false);
-                        rest = false;
                     }
                     if (inData > 8.5 && inData <= 10) {
                         button1.setChecked(true);
@@ -616,7 +610,6 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                         button5.setChecked(true);
                         button6.setChecked(true);
                         button7.setChecked(false);
-                        rest = false;
                     }
                     if (inData > 10) {
                         button1.setChecked(true);
@@ -626,7 +619,6 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                         button5.setChecked(true);
                         button6.setChecked(true);
                         button7.setChecked(true);
-                        rest = false;
                     }
 
                 }
@@ -861,7 +853,7 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
         }
 
         public void run() {
-            mmBuffer = new byte[1024];
+            mmBuffer = new byte[512];
             int numBytes; // bytes returned from read()
 
             // Keep listening to the InputStream until an exception occurs.
@@ -875,34 +867,9 @@ public class SensorActivity extends AppCompatActivity implements SensorEventList
                     if(server){
                         Float inData = new Float(0);
                         if(newData!=null){
-                            String newString = new String(newData);
-                            Float maxVal = new Float(0);
-                            int index = newString.lastIndexOf(".");;
-                            while(index!=-1){
-                                Float temp = new Float(newString.substring(index-1));
-                                if(temp>maxVal){
-                                    maxVal = temp;
-                                }
-                                newString = newData.substring(0,index-1);
-                            }
-                            /*
-                            int index1 = newString.lastIndexOf(".");
-                            String[] splitData = new String[3];
-                            splitData[0] = newString.substring(index1-1,newString.length()-1);
-                            newString = newString.substring(0, index1-2);
-                            int index2 = newString.lastIndexOf(".");
-                            splitData[1] = newString.substring(index2-1,index1-2);
-                            splitData[2] = newString.substring(0,index2-1);
-
-                            Float maxVal = Float.parseFloat(splitData[0]);
-                            for (int i = 1; i < splitData.length; i++) {
-                                if (Float.parseFloat(splitData[i]) > maxVal) {
-                                    maxVal = Float.parseFloat(splitData[i]);
-                                }
-                            }*/
-                            inData = maxVal;
+                            inData = Float.valueOf(newData);
                         }
-                        Log.d("TAG", "inData is" + inData);
+                        Log.d("TAG", "inData is" + newData);
                         runOnUiThread(new buttonsThread(inData));
                     }
 
