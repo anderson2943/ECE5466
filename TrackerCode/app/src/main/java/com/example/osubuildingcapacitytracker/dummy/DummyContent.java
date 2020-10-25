@@ -23,10 +23,11 @@ public class DummyContent {
      */
     public static final Map<String, DummyItem> ITEM_MAP = new HashMap<String, DummyItem>();
 
-    private static final int COUNT = 25;
+    private static final int COUNT = 3;
 
     static {
         // Add some sample items.
+
         for (int i = 1; i <= COUNT; i++) {
             addItem(createDummyItem(i));
         }
@@ -38,7 +39,17 @@ public class DummyContent {
     }
 
     private static DummyItem createDummyItem(int position) {
-        return new DummyItem(String.valueOf(position), "Item " + position, makeDetails(position));
+        if (position == 1) {
+            return new DummyItem(Integer.toString(80) + "%", "Roesch Library", makeDetails(position));
+        }
+        else if (position == 2) {
+            return new DummyItem(Integer.toString(50) + "%", "The RPAC", makeDetails(position));
+        }
+        else {
+            return new DummyItem(Integer.toString(30) + "%", "18th Avenue Library", makeDetails(position));
+        }
+
+
     }
 
     private static String makeDetails(int position) {
