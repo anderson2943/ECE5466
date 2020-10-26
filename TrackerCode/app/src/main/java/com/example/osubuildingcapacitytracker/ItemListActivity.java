@@ -117,7 +117,7 @@ public class ItemListActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(final ViewHolder holder, int position) {
-            holder.mIdView.setText(mValues.get(position).id);
+            holder.mIdView.setText(mValues.get(position).percent);
             holder.mContentView.setText(mValues.get(position).capacity);
 
             holder.itemView.setTag(mValues.get(position));

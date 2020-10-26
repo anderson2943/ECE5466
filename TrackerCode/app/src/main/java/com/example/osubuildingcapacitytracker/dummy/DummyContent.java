@@ -1,5 +1,7 @@
 package com.example.osubuildingcapacitytracker.dummy;
 
+import android.content.Intent;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,27 +42,27 @@ public class DummyContent {
 
     private static DummyItem createDummyItem(int position) {
         if (position == 1) {
-            return new DummyItem(Integer.toString(80) + "%",
+            return new DummyItem(Integer.toString(position),Integer.toString(80) + "%",
                     "Thompson Library","Thompson Library\n(320 out of 400)",
                     makeDetails(position), "thompson");
         }
         else if (position == 4) {
-            return new DummyItem(Integer.toString(50) + "%",
+            return new DummyItem(Integer.toString(position),Integer.toString(50) + "%",
                     "The RPAC","The RPAC\n(500 out of 1000)",
                     makeDetails(position), "rpac");
         }
         else if(position == 3) {
-            return new DummyItem(Integer.toString(60) + "%",
+            return new DummyItem(Integer.toString(position),Integer.toString(60) + "%",
                     "The Student Union" ,"The Student Union\n(60 out of 100)",
                     makeDetails(position), "union");
         }
         else if (position == 2) {
-            return new DummyItem(Integer.toString(50) +"%",
+            return new DummyItem(Integer.toString(position),Integer.toString(50) +"%",
                     "South Jesse Owens", "South Jesse Owens Rec Center\n(20 out of 40)",
                     makeDetails(position), "southrec");
         }
         else {
-            return new DummyItem(Integer.toString(30) + "%",
+            return new DummyItem(Integer.toString(position),Integer.toString(30) + "%",
                     "18th Avenue Library","18th Avenue Library\n(90 out of 300)",
                     makeDetails(position), "avenue");
         }
@@ -94,14 +96,16 @@ public class DummyContent {
      */
     public static class DummyItem {
         public final String id;
+        public final String percent;
         public final String name;
         public final String details;
         public final String capacity;
         public final String imageName;
 
-        public DummyItem(String id, String name, String capacity, String details, String imageName) {
+        public DummyItem(String id, String percent, String name, String capacity, String details, String imageName) {
             this.id = id;
             this.capacity = capacity;
+            this.percent = percent;
             this.name = name;
             this.details = details;
             this.imageName = imageName;
