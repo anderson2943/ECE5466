@@ -23,7 +23,7 @@ public class DummyContent {
      */
     public static final Map<String, DummyItem> ITEM_MAP = new HashMap<String, DummyItem>();
 
-    private static final int COUNT = 3;
+    private static final int COUNT = 5;
 
     static {
         // Add some sample items.
@@ -40,13 +40,29 @@ public class DummyContent {
 
     private static DummyItem createDummyItem(int position) {
         if (position == 1) {
-            return new DummyItem(Integer.toString(80) + "%", "Roesch Library", makeDetails(position));
+            return new DummyItem(Integer.toString(80) + "%",
+                    "Thompson Library","Thompson Library\n(320 out of 400)",
+                    makeDetails(position), "thompson");
+        }
+        else if (position == 4) {
+            return new DummyItem(Integer.toString(50) + "%",
+                    "The RPAC","The RPAC\n(500 out of 1000)",
+                    makeDetails(position), "rpac");
+        }
+        else if(position == 3) {
+            return new DummyItem(Integer.toString(60) + "%",
+                    "The Student Union" ,"The Student Union\n(60 out of 100)",
+                    makeDetails(position), "union");
         }
         else if (position == 2) {
-            return new DummyItem(Integer.toString(50) + "%", "The RPAC", makeDetails(position));
+            return new DummyItem(Integer.toString(50) +"%",
+                    "South Jesse Owens", "South Jesse Owens Rec Center\n(20 out of 40)",
+                    makeDetails(position), "southrec");
         }
         else {
-            return new DummyItem(Integer.toString(30) + "%", "18th Avenue Library", makeDetails(position));
+            return new DummyItem(Integer.toString(30) + "%",
+                    "18th Avenue Library","18th Avenue Library\n(90 out of 300)",
+                    makeDetails(position), "avenue");
         }
 
 
@@ -54,9 +70,21 @@ public class DummyContent {
 
     private static String makeDetails(int position) {
         StringBuilder builder = new StringBuilder();
-        builder.append("Details about Item: ").append(position);
-        for (int i = 0; i < position; i++) {
-            builder.append("\nMore details information here.");
+        //builder.append("Details about Item: ").append(position);
+        if (position == 1) {
+            builder.append("1858 Neil Ave\nColumbus, OH 43210");
+        }
+        else if (position == 4) {
+            builder.append("337 Annie and John Glenn Ave\nColumbus, OH 43210");
+        }
+        else if (position == 3) {
+            builder.append("1739 N High St\nColumbus, OH 43210");
+        }
+        else if (position == 2){
+            builder.append("175 W 11th Ave\nColumbus, OH 43201");
+        }
+        else {
+            builder.append("175 W 18th Ave\nColumbus, OH 43210");
         }
         return builder.toString();
     }
@@ -66,18 +94,22 @@ public class DummyContent {
      */
     public static class DummyItem {
         public final String id;
-        public final String content;
+        public final String name;
         public final String details;
+        public final String capacity;
+        public final String imageName;
 
-        public DummyItem(String id, String content, String details) {
+        public DummyItem(String id, String name, String capacity, String details, String imageName) {
             this.id = id;
-            this.content = content;
+            this.capacity = capacity;
+            this.name = name;
             this.details = details;
+            this.imageName = imageName;
         }
 
         @Override
         public String toString() {
-            return content;
+            return name;
         }
     }
 }

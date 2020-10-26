@@ -27,7 +27,11 @@
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <include layout="@layout/item_list" />
+        <include
+            layout="@layout/item_list"
+            android:layout_width="340dp"
+            android:layout_height="561dp" />
+
     </FrameLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -37,5 +41,13 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="@dimen/fab_margin"
         app:srcCompat="@android:drawable/ic_dialog_email" />
+
+    <ImageView
+        android:id="@+id/osuLogo"
+        android:layout_width="400dp"
+        android:layout_height="190dp"
+        app:layout_anchor="@+id/frameLayout"
+        app:layout_anchorGravity="bottom|center"
+        app:srcCompat="@drawable/osulogo" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
