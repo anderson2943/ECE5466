@@ -67,7 +67,7 @@ public class ItemListActivity extends AppCompatActivity {
     private final int MY_REQ_CODE = 42;
     private LocationRequest locationRequest;
     private LocationCallback locationCallback;
-    private boolean updatesOn;
+    private boolean backgroundLocOn;
     private GeofencingClient geofencingClient;
     private PendingIntent geofencePendingIntent;
     ArrayList<Geofence> geofenceList;
@@ -104,7 +104,7 @@ public class ItemListActivity extends AppCompatActivity {
         View recyclerView = findViewById(R.id.item_list);
         assert recyclerView != null;
         setupRecyclerView((RecyclerView) recyclerView);
-
+        backgroundLocOn = false;
         geofenceClientStarted = false;
         locationRequest = new LocationRequest();
         locationRequest.setInterval(7500); //in ms
@@ -146,6 +146,7 @@ public class ItemListActivity extends AppCompatActivity {
         Double[] pool = {39.98839498, -83.02861959};
         landmarks.put("pool", pool);
         //okay so here we need to populate the geofenceList. I want to do this in a new thread that we can put to sleep and wake up
+        geofenceList = new ArrayList<>();
         getCloseLandmarks = new Thread() {
             @Override
             public void run() {
@@ -178,12 +179,14 @@ public class ItemListActivity extends AppCompatActivity {
                     }
                 }//end of for loop
                 synchronized (this) {
+                    Log.i("SyncGeofenceThread", "inside the sync");
                     geofenceList.clear(); //clear the list and then populate it again. This could make a race condition so sync it
                     geofenceList.addAll(tempList);
                     updateGeofences();
                 }//end of sync
                 try {
                     // thread to sleep for 5 minutes. reminder that geofences expire after 6 minutes
+                    Log.i("SyncGeofenceThread", "putting thread to sleep");
                     Thread.sleep(THREAD_SLEEP);
                 } catch (Exception e) {
                     Log.e("AddGeofenceThread", e.toString());
@@ -221,9 +224,9 @@ public class ItemListActivity extends AppCompatActivity {
         //start the thread
         getCloseLandmarks.start();
 
-        //initialize geofenceing client
+        //initialize geofencing client
         geofencingClient = LocationServices.getGeofencingClient(this);
-        startLocationUpdates();
+        //startlocationupdates() moved to onStart() method
     }
 
     private PendingIntent getGeofencePendingIntent() {
@@ -275,6 +278,10 @@ public class ItemListActivity extends AppCompatActivity {
             }
             // I think because there's the FLAG_UPDATE_CURRENT on the pending intent, it will just update fences if they already exist
             //TODO get rid of the success listeners
+            if(geofenceList.isEmpty()){
+                //an error will occur if the list is empty
+                return;
+            }
             geofencingClient.addGeofences(getGeofencingRequest(), getGeofencePendingIntent())
                     .addOnSuccessListener(this, new OnSuccessListener<Void>() {
                         @Override
@@ -286,6 +293,7 @@ public class ItemListActivity extends AppCompatActivity {
                     .addOnFailureListener(this, new OnFailureListener() {
                         @Override
                         public void onFailure(@NonNull Exception e) {
+
                             // Failed to add geofences, print log message
                             Log.d("Geofence: ", "geofence failed");
                         }
@@ -311,6 +319,25 @@ public class ItemListActivity extends AppCompatActivity {
         updateGeofences();
         //print
         Log.d("StartUpdates: ", "Updates started");
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if(backgroundLocOn){ //if the app is pulled back into foreground
+            stopLocationUpdatesInBackground();
+            startLocationUpdates();
+        }
+
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if(!backgroundLocOn){ //if app is going sleepys
+            stopLocationUpdates();
+            startLocationUpdatesInBackground();
+        }
     }
 
     private void startLocationUpdatesInBackground() {
@@ -410,5 +437,7 @@ public class ItemListActivity extends AppCompatActivity {
                 mContentView = (TextView) view.findViewById(R.id.content);
             }
         }
+
+
     }
 }
