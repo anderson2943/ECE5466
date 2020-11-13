@@ -2,16 +2,20 @@ package com.example.osubuildingcapacitytracker;
 
 import android.Manifest;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.appcompat.widget.Toolbar;
 
@@ -38,9 +42,11 @@ import android.widget.Toast;
 import com.example.osubuildingcapacitytracker.dummy.DummyContent;
 
 import java.util.ArrayList;
+import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * An activity representing a list of Items. This activity
@@ -62,18 +68,128 @@ public class ItemListActivity extends AppCompatActivity {
     private double accuracy;
     private FusedLocationProviderClient fusedLocationProviderClient;
     private final int MY_PERMISSION_REQ_FINE_LOC = 101;
+    private final int MY_PERMISSION_REQ_BACK_LOC = 201;
     private final int GEOFENCE_EXPIRE = 60000 * 6; //in ms, so 5 mins
-    private final int THREAD_SLEEP = 60000 * 5; //in ms, so 6 mins
+    private final int THREAD_SLEEP = 60000 * 2; //in ms, so 6 mins
     private final int MY_REQ_CODE = 42;
     private LocationRequest locationRequest;
     private LocationCallback locationCallback;
     private boolean backgroundLocOn;
     private GeofencingClient geofencingClient;
     private PendingIntent geofencePendingIntent;
-    ArrayList<Geofence> geofenceList;
+    public ArrayList<Geofence> geofenceList;
     private Map<String, Double[]> landmarks;
+    private Map<String, Integer> capacity;
+    private Map<String, Double> distances;
     private Thread getCloseLandmarks;
     private boolean geofenceClientStarted;
+    private DummyContent dummyContent = new DummyContent();
+    private RecyclerView.LayoutManager layoutManager;
+    private View recyclerView;
+    private SimpleItemRecyclerViewAdapter simpleItemRecyclerViewAdapter;
+    private HashMap<String, Integer> triggeredFences;
+    private Boolean threadRun;
+
+    //BR for catching intents thrown by GeofenceBroadcastReceiver
+    BroadcastReceiver textBroadcastReceiver = new BroadcastReceiver() {
+        @RequiresApi(api = Build.VERSION_CODES.N)
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            //TextView textView = findViewById(R.id.geofenceCurr);
+            //textView.setText(intent.getStringExtra("loc"));
+            //Decide what to do with an intent here, like update UI or change a variable
+            String loc = intent.getStringExtra("loc");
+            if(intent.getAction().equals("UPDATE_DWELL")){
+                //intent from geofence
+                String closestBuilding = "";
+                Double closestDistance = distances.get(loc);
+                for (Map.Entry entry : triggeredFences.entrySet()) {
+                    if(!entry.getKey().equals(loc) && closestDistance>distances.get(entry.getKey())){
+                        closestDistance = distances.get(entry.getKey());
+                        closestBuilding = (String)entry.getKey();
+                    }
+                }
+                if(triggeredFences.size()>=1){ // could end up in 2 fences at a time
+
+                    //update values in map
+                    for (Map.Entry entry : triggeredFences.entrySet()) {
+                        if(entry.getKey().equals(closestBuilding)){
+                            //update num val to 1
+                            triggeredFences.replace((String)entry.getKey(), new Integer(1));
+                            Integer cap = capacity.get(closestBuilding);
+                            cap +=intent.getIntExtra("increment",0);
+                            capacity.replace(closestBuilding,cap);
+                            //update ui
+                            simpleItemRecyclerViewAdapter.updateCapacity(closestBuilding, cap);
+                        }else{ //update num val to 0
+                            if(!entry.getValue().equals(0)){
+                                //fence already has 1 there, decrement the cap
+                                String temploc = (String)entry.getKey();
+                                Integer cap = capacity.get(temploc);
+                                cap -= 1;
+                                capacity.replace(temploc,cap);
+                                //update ui
+                                simpleItemRecyclerViewAdapter.updateCapacity(temploc, cap);
+                            }
+                            triggeredFences.replace((String)entry.getKey(), new Integer(0));
+                        }
+                    }
+                }else{ // only one fence dwell, the current one
+                    triggeredFences.put(loc, new Integer(1));
+                    Integer cap = capacity.get(loc);
+                    cap +=intent.getIntExtra("increment",0);
+                    capacity.replace(loc,cap);
+                    //update ui
+                    simpleItemRecyclerViewAdapter.updateCapacity(loc, cap);
+                }
+            }else if(intent.getAction().equals("UPDATE_EXIT")){
+                if(triggeredFences.containsKey(loc)){
+                    if(triggeredFences.size()>1&&triggeredFences.get(loc).equals(new Integer(1))){ //more than 1 entry, update cap
+                        triggeredFences.remove(loc);
+                        //temp inits
+                        String closestBuilding = loc;
+                        Double closestDistance = distances.get(loc);
+                        Boolean tempset = false;
+                        for (Map.Entry entry : triggeredFences.entrySet()) {
+                            if(!tempset){
+                                //init these to some valid variables in the set. First pass thru only
+                                tempset = true;
+                                closestBuilding = (String)entry.getKey();
+                                closestDistance = (Double)entry.getValue();
+                            }
+                            if(!entry.getKey().equals(loc) && closestDistance>distances.get(entry.getKey())){
+                                closestDistance = distances.get(entry.getKey());
+                                closestBuilding = (String)entry.getKey();
+                            }
+                        }
+                        //dec the old loc variable
+                        Integer oldcap = capacity.get(loc);
+                        oldcap -=1;
+                        capacity.replace(loc,oldcap);
+                        simpleItemRecyclerViewAdapter.updateCapacity(loc, oldcap);
+                        //shouldnt be any others that can possibly have a 1
+                        // set closest building cap to 1
+                        triggeredFences.replace(closestBuilding, new Integer(1));
+                        Integer cap = capacity.get(closestBuilding);
+                        cap +=intent.getIntExtra("increment",0);
+                        capacity.replace(closestBuilding,cap);
+                        //update ui
+                        simpleItemRecyclerViewAdapter.updateCapacity(closestBuilding, cap);
+                    }else{
+                        //only one entry
+                        triggeredFences.remove(loc);
+                        Integer oldcap = capacity.get(loc);
+                        oldcap -=1;
+                        capacity.replace(loc,oldcap);
+                        simpleItemRecyclerViewAdapter.updateCapacity(loc, oldcap);
+                    }
+
+                }
+            }
+            //currently unused action for "UPDATE_CAPACITY"
+        }
+    };
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,8 +216,10 @@ public class ItemListActivity extends AppCompatActivity {
             // activity should be in two-pane mode.
             mTwoPane = true;
         }
-
-        View recyclerView = findViewById(R.id.item_list);
+        //check initial permissions are granted
+        //initPermissionsCheck(); was checking really often...
+        threadRun = true;
+        recyclerView = findViewById(R.id.item_list);
         assert recyclerView != null;
         setupRecyclerView((RecyclerView) recyclerView);
         backgroundLocOn = false;
@@ -139,29 +257,76 @@ public class ItemListActivity extends AppCompatActivity {
                 accuracy = location.getAccuracy();
             }
         };
-
+        distances = new HashMap<>();
+        triggeredFences = new HashMap<>();
         //populate landmarks list
-        //TODO replace this with the real landmarks
+        //TODO fill in remaining buildings
+        //TODO find the rest of building capacities, using 200 as default rn
         landmarks = new HashMap<>();
-        Double[] pool = {39.98839498, -83.02861959};
-        landmarks.put("pool", pool);
+        //format for landmarks is: lat, lang, radius, max capacity
+        //TODO GET RID OF TEST VARIABLES
+        //Double[] pool = {39.98839498, -83.02861959, 80.0, 200.0};
+        //landmarks.put("pool", pool);
+
+        //actual landmarks
+        landmarks.put("Dreese Lab", new Double[]{40.00234558,-83.01599023, 33.02755, 200.0});
+        landmarks.put("Baker Systems Engineering", new Double[]{40.00168193, -83.01597146,48.6623, 200.0});
+        landmarks.put("Journalism Building", new Double[]{40.00200682,-83.01500711,37.3767, 200.0});
+        landmarks.put("Caldwell Lab", new Double[]{40.00128333, -83.01490930,38.3341, 200.0});
+        landmarks.put("Smith Lab", new Double[]{40.002110, -83.013190,52.4051, 200.0});
+        landmarks.put("McPherson Chemical Lab", new Double[]{40.00228419,-83.01417563,58.603, 200.0});
+        landmarks.put("Hitchcock hall", new Double[]{40.00364845,-83.01521900,44.0233, 200.0});
+        landmarks.put("Physics Research Building", new Double[]{40.00338546,-83.01418635,66.2825, 200.0});
+        landmarks.put("Thompson Library", new Double[]{39.99930265993615,-83.01487305423194,55.5, 200.0});
+        landmarks.put("18th Avenue Library", new Double[]{40.001653210743655,-83.01333614846641, 33.3, 200.0});
+        landmarks.put("Stillman Hall", new Double[]{40.00186177473543,-83.01099075409095,36.11, 200.0});
+        landmarks.put("OSU RPAC", new Double[]{39.99952150365391,-83.01845802398842,73.05, 200.0});
+        landmarks.put("Bolz Hall", new Double[]{40.002650, -83.015520, 55.6, 200.0});
+        landmarks.put("Knowlton Hall", new Double[]{40.00362508073249,-83.01683446552049,75.5, 200.0});
+        //landmarks.put("", new Double[]{});
+        //populate capacity variable
+        //TODO update list from server data
+        capacity = new HashMap<>();
+        for(String entry: landmarks.keySet()){
+            capacity.put(entry, new Integer(0));
+        }
+
         //okay so here we need to populate the geofenceList. I want to do this in a new thread that we can put to sleep and wake up
         geofenceList = new ArrayList<>();
-        getCloseLandmarks = new Thread() {
-            @Override
-            public void run() {
+        getCloseLandmarks = new locThread();
+
+        //register receiver
+        IntentFilter filter = new IntentFilter("UPDATE_UI");
+        filter.addAction("UPDATE_CAPACITY");
+        registerReceiver(textBroadcastReceiver, filter);
+
+        //end of thread declaration
+        //start the thread
+        getCloseLandmarks.start();
+
+        //initialize geofencing client
+        geofencingClient = LocationServices.getGeofencingClient(this);
+        //startlocationupdates() moved to onStart() method
+    }
+
+    class locThread extends Thread {
+        @Override
+        public void run() {
+            while (threadRun) {
                 ArrayList<Geofence> tempList = new ArrayList<>();
                 for (Map.Entry<String, Double[]> entry : landmarks.entrySet()) {
-                    Double[] latlng = entry.getValue();
-                    //check if building is within 1000 ft of user
-                    if (distance(latitude, latlng[0], longitude, latlng[1], 0.0, 0.0) < 300) {
+                    Double[] latlngrad = entry.getValue();
+                    //check if building is within ~1000 ft of user
+                    Double distance = Distance(latitude, latlngrad[0], longitude, latlngrad[1], 0.0, 0.0);
+                    distances.put(entry.getKey(), distance);
+                    if (distance < 300) {
                         Geofence temp = new Geofence.Builder()// Set the request ID of the geofence. This is a string to identify this
                                 // geofence.
                                 .setRequestId(entry.getKey())
 
                                 // Set the circular region of this geofence.
                                 .setCircularRegion(
-                                        latlng[0], latlng[1], 80
+                                        latlngrad[0], latlngrad[1], latlngrad[2].floatValue()
                                 )
 
                                 // Set the expiration duration of the geofence
@@ -188,45 +353,45 @@ public class ItemListActivity extends AppCompatActivity {
                     // thread to sleep for 5 minutes. reminder that geofences expire after 6 minutes
                     Log.i("SyncGeofenceThread", "putting thread to sleep");
                     Thread.sleep(THREAD_SLEEP);
+                } catch (InterruptedException i) {
+                    Log.i("InterruptedThread", i.toString());
                 } catch (Exception e) {
                     Log.e("AddGeofenceThread", e.toString());
                 }
             }
-            /**
-             * Calculate distance between two points in latitude and longitude taking
-             * into account height difference. If you are not interested in height
-             * difference pass 0.0. Uses Haversine method as its base.
-             *
-             * lat1, lon1 Start point lat2, lon2 End point el1 Start altitude in meters
-             * el2 End altitude in meters
-             * @returns Distance in Meters
-             */
-            public double distance(double lat1, double lat2, double lon1,
-                                   double lon2, double el1, double el2) {
+        }
 
-                final int R = 6371; // Radius of the earth
+        /**
+         * TODO find credit
+         * CREDIT to someone else
+         * Calculate distance between two points in latitude and longitude taking
+         * into account height difference. If you are not interested in height
+         * difference pass 0.0. Uses Haversine method as its base.
+         * <p>
+         * lat1, lon1 Start point lat2, lon2 End point el1 Start altitude in meters
+         * el2 End altitude in meters
+         *
+         * @returns Distance in Meters
+         */
+        public double Distance(double lat1, double lat2, double lon1,
+                               double lon2, double el1, double el2) {
 
-                double latDistance = Math.toRadians(lat2 - lat1);
-                double lonDistance = Math.toRadians(lon2 - lon1);
-                double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
-                        + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-                        * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
-                double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                double distance = R * c * 1000; // convert to meters
+            final int R = 6371; // Radius of the earth
 
-                double height = el1 - el2;
+            double latDistance = Math.toRadians(lat2 - lat1);
+            double lonDistance = Math.toRadians(lon2 - lon1);
+            double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                    + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                    * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+            double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            double distance = R * c * 1000; // convert to meters
 
-                distance = Math.pow(distance, 2) + Math.pow(height, 2);
+            double height = el1 - el2;
 
-                return Math.sqrt(distance);
-            }
-        }; //end of thread declaration
-        //start the thread
-        getCloseLandmarks.start();
+            distance = Math.pow(distance, 2) + Math.pow(height, 2);
 
-        //initialize geofencing client
-        geofencingClient = LocationServices.getGeofencingClient(this);
-        //startlocationupdates() moved to onStart() method
+            return Math.sqrt(distance);
+        }
     }
 
     private PendingIntent getGeofencePendingIntent() {
@@ -260,11 +425,17 @@ public class ItemListActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         switch (requestCode) {
             case MY_PERMISSION_REQ_FINE_LOC:
-                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            case MY_PERMISSION_REQ_BACK_LOC:
+                if (grantResults.length>0&& (grantResults[0] == PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this, permissions[0])==PackageManager.PERMISSION_GRANTED)) {
                     //we're all good
                 } else {
-                    Toast.makeText(getApplicationContext(), "This requires permissions to be granted", Toast.LENGTH_SHORT).show();
-                    finish();
+                    if(grantResults.length>0){
+                        Toast.makeText(getApplicationContext(), "This requires permissions to be granted", Toast.LENGTH_SHORT).show();
+                        finish();
+                    }
+
+                    //this line has been edited out, because we do'nt want the app to crash
+                    //
                 }
                 break;
         }
@@ -300,7 +471,7 @@ public class ItemListActivity extends AppCompatActivity {
                     });
         }else{
             if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                requestPermissions(new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION}, MY_PERMISSION_REQ_FINE_LOC);
+                requestPermissions(new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION}, MY_PERMISSION_REQ_BACK_LOC);
             }
         }
 
@@ -332,6 +503,19 @@ public class ItemListActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        registerReceiver(textBroadcastReceiver, new IntentFilter("UPDATE_UI"));
+
+    }
+
+    @Override
+    protected void onPause() {
+        unregisterReceiver(textBroadcastReceiver);
+        super.onPause();
+    }
+
+    @Override
     protected void onStop() {
         super.onStop();
         if(!backgroundLocOn){ //if app is going sleepys
@@ -344,7 +528,7 @@ public class ItemListActivity extends AppCompatActivity {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             LocationRequest newlocationRequest = new LocationRequest();
             newlocationRequest.setInterval(60000); //in ms
-            newlocationRequest.setFastestInterval(30000);
+            newlocationRequest.setFastestInterval(10000);
             newlocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
             fusedLocationProviderClient.requestLocationUpdates(newlocationRequest, getPendingBackgroundIntent());
         }else{
@@ -354,6 +538,22 @@ public class ItemListActivity extends AppCompatActivity {
         }
         //print
         Log.d("StartUpdatesBackgrnd: ", "Updates started");
+    }
+    private void initPermissionsCheck(){
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+           //good to go
+        }else{
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, MY_PERMISSION_REQ_FINE_LOC);
+            }
+        }
+        if(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED ) {
+            //good to go
+        }else{
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                requestPermissions(new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION}, MY_PERMISSION_REQ_BACK_LOC);
+            }
+        }
     }
 
     private void stopLocationUpdatesInBackground(){
@@ -367,15 +567,22 @@ public class ItemListActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerView(@NonNull RecyclerView recyclerView) {
-        recyclerView.setAdapter(new SimpleItemRecyclerViewAdapter(this, DummyContent.ITEMS, mTwoPane));
+        layoutManager = new LinearLayoutManager(recyclerView.getContext());
+        recyclerView.setLayoutManager(layoutManager);
+        simpleItemRecyclerViewAdapter = new SimpleItemRecyclerViewAdapter(this, dummyContent.ITEMS, mTwoPane);
+        recyclerView.setAdapter(simpleItemRecyclerViewAdapter);
     }
+
 
     public static class SimpleItemRecyclerViewAdapter
             extends RecyclerView.Adapter<SimpleItemRecyclerViewAdapter.ViewHolder> {
 
         private final ItemListActivity mParentActivity;
-        private final List<DummyContent.DummyItem> mValues;
+        private List<DummyContent.DummyItem> mValues;
         private final boolean mTwoPane;
+        private HashMap<String, Object[]> viewHolders;
+
+        //final ViewHolder holder, int position
         private final View.OnClickListener mOnClickListener = new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -391,7 +598,7 @@ public class ItemListActivity extends AppCompatActivity {
                 } else {
                     Context context = view.getContext();
                     Intent intent = new Intent(context, ItemDetailActivity.class);
-                    intent.putExtra(ItemDetailFragment.ARG_ITEM_ID, item.id);
+                    intent.putExtra(ItemDetailFragment.ARG_ITEM_ID, item.toString());
 
                     context.startActivity(intent);
                 }
@@ -406,6 +613,29 @@ public class ItemListActivity extends AppCompatActivity {
             mTwoPane = twoPane;
         }
 
+        public void updateCapacity(String name, int cap){
+            //use onviewadded to make list with teh views attached to strings of the names
+            //make new method in adapter to update
+            Object[] viewPos = viewHolders.get(name);
+            //holder.getLayoutPosition();
+            try{
+                DummyContent.DummyItem dummyItem = mValues.get((Integer) viewPos[1]);
+                dummyItem.setCapacity(cap);
+                ViewHolder holder = (ViewHolder)viewPos[0];
+
+                holder.mContentView.setText(dummyItem.getInfo());
+                holder.mIdView.setText(dummyItem.getPercent());
+                //holder.notify();
+            }
+            catch (Exception e){
+                //error handling code
+                Log.e("UpdateCapacity", "update content failed");
+            }
+            //update here
+
+
+        }
+
         @Override
         public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             View view = LayoutInflater.from(parent.getContext())
@@ -415,11 +645,22 @@ public class ItemListActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(final ViewHolder holder, int position) {
-            holder.mIdView.setText(mValues.get(position).percent);
-            holder.mContentView.setText(mValues.get(position).capacity);
+            //holder.mIdView.setText(mValues.get(position).getInfo());
+            //holder.mContentView.setText(mValues.get(position).getCapacity().toString());
+            holder.mContentView.setText(mValues.get(position).getInfo());
+            holder.mIdView.setText(mValues.get(position).getPercent());
+            Object[] holderPos = {holder, new Integer(position)};
+
+            if(viewHolders!=null){
+                viewHolders.put(mValues.get(position).toString(), holderPos);
+            }else{
+                viewHolders = new HashMap<>();
+                viewHolders.put(mValues.get(position).toString(), holderPos);
+            }
 
             holder.itemView.setTag(mValues.get(position));
             holder.itemView.setOnClickListener(mOnClickListener);
+
         }
 
         @Override

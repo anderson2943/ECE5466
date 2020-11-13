@@ -44,16 +44,17 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
             for(Geofence geofence: triggeringGeofences){
                 String name = geofence.getRequestId();
                 if(geofenceTransition == Geofence.GEOFENCE_TRANSITION_DWELL){
-                    //updateText(name);
-                    //geofenceText.setText(name);'
-                    Intent textIntent = new Intent("UPDATE_UI");
+                    //dwelling inside geofence,
+                    Intent textIntent = new Intent("UPDATE_DWELL");
                     textIntent.putExtra("loc", name);
+                    textIntent.putExtra("increment", 1);
                     context.sendBroadcast(textIntent);
                     Log.d("GeofenceBR: ", name+" dwell transition");
                 }else{
-                    //updateText("not inside a geofence currently");
-                    Intent textIntent = new Intent("UPDATE_UI");
-                    textIntent.putExtra("loc", "Not currently inside a geofence");
+                    //leaving geofence
+                    Intent textIntent = new Intent("UPDATE_EXIT");
+                    textIntent.putExtra("loc", name);
+                    textIntent.putExtra("increment", -1);
                     context.sendBroadcast(textIntent);
                     Log.d("GeofenceBR: ", name+" exit transition");
                 }
