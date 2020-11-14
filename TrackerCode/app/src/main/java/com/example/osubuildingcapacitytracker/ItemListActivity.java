@@ -183,7 +183,6 @@ public class ItemListActivity extends AppCompatActivity {
                         capacity.replace(loc,oldcap);
                         simpleItemRecyclerViewAdapter.updateCapacity(loc, oldcap);
                     }
-
                 }
             }
             //currently unused action for "UPDATE_CAPACITY"
@@ -218,12 +217,16 @@ public class ItemListActivity extends AppCompatActivity {
         }
         //check initial permissions are granted
         //initPermissionsCheck(); was checking really often...
+        initPermissionsCheck(Manifest.permission.ACCESS_FINE_LOCATION, MY_PERMISSION_REQ_FINE_LOC);
+
+
         threadRun = true;
         recyclerView = findViewById(R.id.item_list);
         assert recyclerView != null;
         setupRecyclerView((RecyclerView) recyclerView);
         backgroundLocOn = false;
         geofenceClientStarted = false;
+
         locationRequest = new LocationRequest();
         locationRequest.setInterval(7500); //in ms
         locationRequest.setFastestInterval(5000);
@@ -307,6 +310,7 @@ public class ItemListActivity extends AppCompatActivity {
         //initialize geofencing client
         geofencingClient = LocationServices.getGeofencingClient(this);
         //startlocationupdates() moved to onStart() method
+        initPermissionsCheck(Manifest.permission.ACCESS_BACKGROUND_LOCATION, MY_PERMISSION_REQ_BACK_LOC);
     }
 
     class locThread extends Thread {
@@ -426,12 +430,13 @@ public class ItemListActivity extends AppCompatActivity {
         switch (requestCode) {
             case MY_PERMISSION_REQ_FINE_LOC:
             case MY_PERMISSION_REQ_BACK_LOC:
-                if (grantResults.length>0&& (grantResults[0] == PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this, permissions[0])==PackageManager.PERMISSION_GRANTED)) {
+                if (grantResults.length>0&& grantResults[0] == PackageManager.PERMISSION_GRANTED ) {
                     //we're all good
                 } else {
                     if(grantResults.length>0){
-                        Toast.makeText(getApplicationContext(), "This requires permissions to be granted", Toast.LENGTH_SHORT).show();
-                        finish();
+                        Log.i("onPermissionsResults: ", grantResults.toString());
+                        //Toast.makeText(getApplicationContext(), "This requires permissions to be granted", Toast.LENGTH_SHORT).show();
+                        //finish();
                     }
 
                     //this line has been edited out, because we do'nt want the app to crash
@@ -539,19 +544,12 @@ public class ItemListActivity extends AppCompatActivity {
         //print
         Log.d("StartUpdatesBackgrnd: ", "Updates started");
     }
-    private void initPermissionsCheck(){
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+    private void initPermissionsCheck(String permission, int reqCode){
+        if (ActivityCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED) {
            //good to go
         }else{
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, MY_PERMISSION_REQ_FINE_LOC);
-            }
-        }
-        if(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED ) {
-            //good to go
-        }else{
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                requestPermissions(new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION}, MY_PERMISSION_REQ_BACK_LOC);
+                requestPermissions(new String[]{permission}, reqCode);
             }
         }
     }
@@ -567,8 +565,8 @@ public class ItemListActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerView(@NonNull RecyclerView recyclerView) {
-        layoutManager = new LinearLayoutManager(recyclerView.getContext());
-        recyclerView.setLayoutManager(layoutManager);
+        //layoutManager = new LinearLayoutManager(recyclerView.getContext());
+        //recyclerView.setLayoutManager(layoutManager);
         simpleItemRecyclerViewAdapter = new SimpleItemRecyclerViewAdapter(this, dummyContent.ITEMS, mTwoPane);
         recyclerView.setAdapter(simpleItemRecyclerViewAdapter);
     }
@@ -578,9 +576,9 @@ public class ItemListActivity extends AppCompatActivity {
             extends RecyclerView.Adapter<SimpleItemRecyclerViewAdapter.ViewHolder> {
 
         private final ItemListActivity mParentActivity;
-        private List<DummyContent.DummyItem> mValues;
+        private final List<DummyContent.DummyItem> mValues;
         private final boolean mTwoPane;
-        private HashMap<String, Object[]> viewHolders;
+        private final HashMap<String, Object[]> viewHolders = new HashMap<>();
 
         //final ViewHolder holder, int position
         private final View.OnClickListener mOnClickListener = new View.OnClickListener() {
@@ -616,15 +614,21 @@ public class ItemListActivity extends AppCompatActivity {
         public void updateCapacity(String name, int cap){
             //use onviewadded to make list with teh views attached to strings of the names
             //make new method in adapter to update
-            Object[] viewPos = viewHolders.get(name);
+            //Object[] viewPos = viewHolders.get(name);
             //holder.getLayoutPosition();
             try{
-                DummyContent.DummyItem dummyItem = mValues.get((Integer) viewPos[1]);
-                dummyItem.setCapacity(cap);
-                ViewHolder holder = (ViewHolder)viewPos[0];
+                for (DummyContent.DummyItem item :
+                        mValues) {
+                    if(item.toString().equals(name)){
+                        item.setCapacity(cap);
+                    }
+                }
+                //DummyContent.DummyItem dummyItem = mValues.get((Integer) viewPos[1]);
+                //dummyItem.setCapacity(cap);
+                //ViewHolder holder = (ViewHolder)viewPos[0];
 
-                holder.mContentView.setText(dummyItem.getInfo());
-                holder.mIdView.setText(dummyItem.getPercent());
+                //holder.mContentView.setText(dummyItem.getInfo());
+                //holder.mIdView.setText(dummyItem.getPercent());
                 //holder.notify();
             }
             catch (Exception e){
@@ -649,19 +653,26 @@ public class ItemListActivity extends AppCompatActivity {
             //holder.mContentView.setText(mValues.get(position).getCapacity().toString());
             holder.mContentView.setText(mValues.get(position).getInfo());
             holder.mIdView.setText(mValues.get(position).getPercent());
-            Object[] holderPos = {holder, new Integer(position)};
+            //Object[] holderPos = {holder, new Integer(position)};
 
-            if(viewHolders!=null){
+            //Log.i("BindViewHolder", "Inside onbindviewholder");
+           /* if(viewHolders!=null && viewHolders.size()<mValues.size()){
                 viewHolders.put(mValues.get(position).toString(), holderPos);
-            }else{
-                viewHolders = new HashMap<>();
+                Log.i("BindViewHolder", "adding holder to viewholders");
+            }
+            else{
+                if()
+                //viewHolders = new HashMap<>();
                 viewHolders.put(mValues.get(position).toString(), holderPos);
             }
+
+             */
 
             holder.itemView.setTag(mValues.get(position));
             holder.itemView.setOnClickListener(mOnClickListener);
 
         }
+        //private Boolean holderAdded(final ViewHolder holder){        }
 
         @Override
         public int getItemCount() {

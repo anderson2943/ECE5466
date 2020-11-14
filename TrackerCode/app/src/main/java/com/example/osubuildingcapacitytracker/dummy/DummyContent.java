@@ -1,6 +1,7 @@
 package com.example.osubuildingcapacitytracker.dummy;
 
 import android.content.Intent;
+import android.util.Log;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -29,8 +30,7 @@ public class DummyContent {
 
     private static final int COUNT = 5;
 
-    public DummyContent(){
-        //add all the items
+    static {
         ITEMS.add(new DummyItem(Integer.toString(1),"Dreese Lab", new Integer(0),"2015 Neil Ave, \nColumbus, OH 43210", "default_no_logo.png", 200.0 ));
         ITEMS.add(new DummyItem(Integer.toString(2),"Baker Systems Engineering", new Integer(0),"1971 Neil Ave, \nColumbus, OH 43210", "default_no_logo.png", 200.0 ));
         ITEMS.add(new DummyItem(Integer.toString(3),"Journalism Building", new Integer(0),"242 W 18th Ave, \nColumbus, OH 43210", "default_no_logo.png", 200.0 ));
@@ -46,6 +46,7 @@ public class DummyContent {
         ITEMS.add(new DummyItem(Integer.toString(13),"Bolz Hall", new Integer(0),"2036 Neil Ave,\nColumbus, OH 43210", "default_no_logo.png", 200.0 ));
         ITEMS.add(new DummyItem(Integer.toString(14),"Knowlton Hall", new Integer(0),"275 W Woodruff Ave,\nColumbus, OH 43210", "default_no_logo.png", 200.0 ));
         for (DummyItem dummyitem: ITEMS) {
+            Log.i("DummyContent", "adding items to map");
             ITEM_MAP.put(dummyitem.id, dummyitem);
             ITEM_NAME_MAP.put(dummyitem.name, dummyitem);
         }
@@ -59,7 +60,7 @@ public class DummyContent {
      */
     public static class DummyItem {
         public final String id;
-        public  Double percent;
+        public Double percent;
         public final String name;
         public final String details;
         public Integer capacity;
