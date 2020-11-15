@@ -4,6 +4,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.FragmentActivity;
 
 import android.app.Activity;
+import android.app.Fragment;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -22,40 +23,40 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import androidx.fragment.app.Fragment;
+
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import static com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_YELLOW;
 
 
-public class MapBuildingsView extends Fragment implements OnMapReadyCallback{
+public class MapBuildingsView extends FragmentActivity implements OnMapReadyCallback{
 
     private GoogleMap mMap;
     private LatLngBounds.Builder builder;
     private MapView mapView;
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.map_layout, container, false);
-    }
-
-    @Override
-    public void onViewCreated(View view, Bundle savedInstanceState) {
-        mapView = (MapView) mapView.findViewById(R.id.map);
-        mapView.onCreate(savedInstanceState);
-        mapView.onResume();
-        mapView.getMapAsync(this);
-    }
     //@Override
-    //protected void onCreate(Bundle savedInstanceState) {
-    //    super.onCreate(savedInstanceState);
-    //    setContentView(R.layout.map_layout);
-    //    // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-    //    SupportMapFragment mMapFragment = SupportMapFragment.newInstance();
-    //    mMapFragment = (SupportMapFragment) getFragmentManager().findFragmentById(R.id.map);
-    //    mMapFragment.getMapAsync(this);
+    //public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    //    return inflater.inflate(R.layout.map_layout, container, false);
     //}
+
+    //@Override
+    //public void onViewCreated(View view, Bundle savedInstanceState) {
+    ///    mapView = (MapView) mapView.findViewById(R.id.map);
+    //    mapView.onCreate(savedInstanceState);
+    //    mapView.onResume();
+    //    mapView.getMapAsync(this);
+    //}
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.map_layout);
+        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+        SupportMapFragment mMapFragment = SupportMapFragment.newInstance();
+        mMapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+        mMapFragment.getMapAsync(this);
+    }
 
     /**
      * Manipulates the map once available.

@@ -63,6 +63,8 @@
         <meta-data
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
+
+        // API KEY
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/AIzaSyAGTEjj8Qwyo_9OL5_pxNWi9WpIFuPINn0" />
