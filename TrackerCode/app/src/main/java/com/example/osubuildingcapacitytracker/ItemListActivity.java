@@ -95,7 +95,7 @@ public class ItemListActivity extends AppCompatActivity {
     // Start map when map button clicked
     public void map(View view) {
         Intent intent = new Intent(ItemListActivity.this, com.example.osubuildingcapacitytracker.MapBuildingsView.class);
-        startActivity(intent);
+        ItemListActivity.this.startActivity(intent);
     }
 
 

@@ -8,10 +8,12 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.GoogleMap;
@@ -27,19 +29,33 @@ import androidx.fragment.app.FragmentTransaction;
 import static com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_YELLOW;
 
 
-public class MapBuildingsView extends Activity implements OnMapReadyCallback{
+public class MapBuildingsView extends Fragment implements OnMapReadyCallback{
 
     private GoogleMap mMap;
     private LatLngBounds.Builder builder;
-
+    private MapView mapView;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mMapFragment = SupportMapFragment.newInstance();
-        mMapFragment.getMapAsync(this);
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.map_layout, container, false);
     }
+
+    @Override
+    public void onViewCreated(View view, Bundle savedInstanceState) {
+        mapView = (MapView) mapView.findViewById(R.id.map);
+        mapView.onCreate(savedInstanceState);
+        mapView.onResume();
+        mapView.getMapAsync(this);
+    }
+    //@Override
+    //protected void onCreate(Bundle savedInstanceState) {
+    //    super.onCreate(savedInstanceState);
+    //    setContentView(R.layout.map_layout);
+    //    // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+    //    SupportMapFragment mMapFragment = SupportMapFragment.newInstance();
+    //    mMapFragment = (SupportMapFragment) getFragmentManager().findFragmentById(R.id.map);
+    //    mMapFragment.getMapAsync(this);
+    //}
 
     /**
      * Manipulates the map once available.
