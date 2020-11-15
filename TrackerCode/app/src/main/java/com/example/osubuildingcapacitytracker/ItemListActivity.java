@@ -90,6 +90,15 @@ public class ItemListActivity extends AppCompatActivity {
     private HashMap<String, Integer> triggeredFences;
     private Boolean threadRun;
 
+
+
+    // Start map when map button clicked
+    public void map(View view) {
+        Intent intent = new Intent(ItemListActivity.this, com.example.osubuildingcapacitytracker.MapBuildingsView.class);
+        startActivity(intent);
+    }
+
+
     //BR for catching intents thrown by GeofenceBroadcastReceiver
     BroadcastReceiver textBroadcastReceiver = new BroadcastReceiver() {
         @RequiresApi(api = Build.VERSION_CODES.N)

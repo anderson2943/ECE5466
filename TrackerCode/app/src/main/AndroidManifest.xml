@@ -8,6 +8,19 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
+    <permission
+        android:name="com.example.map.permission.MAPS_RECEIVE"
+        android:protectionLevel="signature"/>
+    <uses-permission android:name="com.example.map.permission.MAPS_RECEIVE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="com.google.android.providers.gsf.permission.READ_GSERVICES"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+    <uses-feature
+        android:glEsVersion="0x00020000"
+        android:required="true" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -35,6 +48,28 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.example.osubuildingcapacitytracker.ItemListActivity" />
         </activity>
+
+        <activity
+            android:name="com.example.osubuildingcapacitytracker.MapBuildingsView"
+            android:label="Map"
+            android:parentActivityName=".ItemListActivity"
+            android:theme="@style/AppTheme.NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.example.osubuildingcapacitytracker.MapBuildingsView" />
+            <meta-data
+                android:name="com.google.android.gms.version"
+                android:value="@integer/google_play_services_version" />
+            <meta-data
+                android:name="com.google.android.geo.API_KEY"
+                android:value="@string/AIzaSyAGTEjj8Qwyo_9OL5_pxNWi9WpIFuPINn0" />
+        </activity>
+
+
+
+
     </application>
+
+
 
 </manifest>
