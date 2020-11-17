@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/ECE5466_lab4_task1_team4.iml" filepath="$PROJECT_DIR$/.idea/modules/ECE5466_lab4_task1_team4.iml" group="ECE5466_lab4_task1_team4" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/app.iml" group="ECE5466_lab4_task1_team4/app" />
+    </modules>
+  </component>
+</project>
