@@ -140,49 +140,62 @@ public class ItemListActivity extends AppCompatActivity {
                 //intent from geofence
                 String closestBuilding = "";
                 Double closestDistance = distances.get(loc);
+                if(!triggeredFences.containsKey(loc)) {
+                    triggeredFences.put(loc, new Integer(0));
+                }
                 for (Map.Entry entry : triggeredFences.entrySet()) {
                     if(!entry.getKey().equals(loc) && closestDistance>distances.get(entry.getKey())){
                         closestDistance = distances.get(entry.getKey());
                         closestBuilding = (String)entry.getKey();
                     }
                 }
-                if(triggeredFences.size()>=1){ // could end up in 2 fences at a time
-
+                if(triggeredFences.size()>1){ // could end up in 2 fences at a time
                     //update values in map
                     for (Map.Entry entry : triggeredFences.entrySet()) {
-                        if(entry.getKey().equals(closestBuilding)){
-                            //update num val to 1
-                            triggeredFences.replace((String)entry.getKey(), new Integer(1));
-                            Integer cap = capacity.get(closestBuilding);
-                            cap +=intent.getIntExtra("increment",0);
-                            capacity.replace(closestBuilding,cap);
-                            //update ui
-                            simpleItemRecyclerViewAdapter.updateCapacity(closestBuilding, cap);
+                        if(entry.getKey().equals(closestBuilding)){ //update val to 1
+                            if(entry.getValue().equals(0)){
+                                //new closest building!
+                                triggeredFences.replace((String)entry.getKey(), new Integer(1));
+                                //TODO increment server cap for entry.getKey() or closestBuilding, they should be strings of the same thing
+                                //TODO then pull capacity data from server and do the following lines OR we do one big update at the end
+                                //capacity.replace(closestBuilding,justPulledServerCap);
+                                //simpleItemRecyclerViewAdapter.updateCapacity(closestBuilding, justPulledServerCap);
+                            }else{
+                                //already 1, no push needs to happen here
+                                //although we could pull if we want.
+                            }
                         }else{ //update num val to 0
                             if(!entry.getValue().equals(0)){
                                 //fence already has 1 there, decrement the cap
+                                triggeredFences.replace((String)entry.getKey(), new Integer(0));
+                                //TODO decrement server cap for entry.getKey()
+                                //TODO then pull capacity data from server and do the following lines OR we do one big update at the end
                                 String temploc = (String)entry.getKey();
-                                Integer cap = capacity.get(temploc);
-                                cap -= 1;
-                                capacity.replace(temploc,cap);
+                                //capacity.replace(temploc,justPulledServerCap);
                                 //update ui
-                                simpleItemRecyclerViewAdapter.updateCapacity(temploc, cap);
+                                //simpleItemRecyclerViewAdapter.updateCapacity(temploc, justPulledServerCap);
+                            }else{
+                                //already 0, nothing needs to be pushed
                             }
-                            triggeredFences.replace((String)entry.getKey(), new Integer(0));
+
                         }
                     }
                 }else{ // only one fence dwell, the current one
-                    triggeredFences.put(loc, new Integer(1));
-                    Integer cap = capacity.get(loc);
-                    cap +=intent.getIntExtra("increment",0);
-                    capacity.replace(loc,cap);
+                    triggeredFences.replace(loc, new Integer(1));
+                    //TODO increment server cap for entry.getKey() or closestBuilding, they should be strings of the same thing
+                    //TODO then pull capacity data from server and do the following lines OR we do one big update at the end
+                    //capacity.replace(loc,justPulledServerCap);
                     //update ui
-                    simpleItemRecyclerViewAdapter.updateCapacity(loc, cap);
+                    //simpleItemRecyclerViewAdapter.updateCapacity(loc, justPulledServerCap);
                 }
                 //increment function of loc triggeredFences.getValue(loc);
             }else if(intent.getAction().equals("UPDATE_EXIT")){
                 if(triggeredFences.containsKey(loc)){
-                    if(triggeredFences.size()>1&&triggeredFences.get(loc).equals(new Integer(1))){ //more than 1 entry, update cap
+                    //the structure here is a little different than above since the following if statement
+                    //is a combination of two conditions
+                    if(triggeredFences.size()>1&&triggeredFences.get(loc).equals(new Integer(1))){
+                        //more than 1 entry, value was 1 so we need to find the new closest building
+                        //means we decrement the server for loc, and increment for the new one
                         triggeredFences.remove(loc);
                         //temp inits
                         String closestBuilding = loc;
@@ -200,26 +213,26 @@ public class ItemListActivity extends AppCompatActivity {
                                 closestBuilding = (String)entry.getKey();
                             }
                         }
-                        //dec the old loc variable
-                        Integer oldcap = capacity.get(loc);
-                        oldcap -=1;
-                        capacity.replace(loc,oldcap);
-                        simpleItemRecyclerViewAdapter.updateCapacity(loc, oldcap);
-                        //shouldnt be any others that can possibly have a 1
-                        // set closest building cap to 1
                         triggeredFences.replace(closestBuilding, new Integer(1));
-                        Integer cap = capacity.get(closestBuilding);
-                        cap +=intent.getIntExtra("increment",0);
-                        capacity.replace(closestBuilding,cap);
-                        //update ui
-                        simpleItemRecyclerViewAdapter.updateCapacity(closestBuilding, cap);
+                        //TODO decrement server for loc
+                        //TODO increment server for closestBuilding
+                        //TODO then pull capacity data from server for BOTH loc and closestBuilding and do the following lines OR we do one big update at the end
+                        //capacity.replace(loc,newServerCap_loc);
+                        //simpleItemRecyclerViewAdapter.updateCapacity(loc, newServerCap_loc);
+                        //capacity.replace(closestBuilding,newServerCap_closestBuilding);
+                        //simpleItemRecyclerViewAdapter.updateCapacity(closestBuilding, newServerCap_closestBuilding);
                     }else{
-                        //only one entry
-                        triggeredFences.remove(loc);
-                        Integer oldcap = capacity.get(loc);
-                        oldcap -=1;
-                        capacity.replace(loc,oldcap);
-                        simpleItemRecyclerViewAdapter.updateCapacity(loc, oldcap);
+                        if(triggeredFences.get(loc).equals(new Integer(1))){ //only one entry, decrement sever for loc
+                            //the line below must go after this if check, otherwise we will get an error. But we could place it after the next else
+                            triggeredFences.remove(loc);
+                            //TODO decrement server for loc
+                            //TODO then pull capacity data from server for loc and do the following lines OR we do one big update at the end
+                            //capacity.replace(loc,newServerCap_loc);
+                            //simpleItemRecyclerViewAdapter.updateCapacity(loc, newServerCap_loc);
+                        }else{
+                            triggeredFences.remove(loc);
+                            //the value was already zero, so we really don't care (nothing to do with server)
+                        }
                     }
                 }
             }
