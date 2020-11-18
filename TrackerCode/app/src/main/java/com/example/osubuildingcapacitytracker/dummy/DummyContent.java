@@ -37,7 +37,7 @@ public class DummyContent {
         ITEMS.add(new DummyItem(Integer.toString(4),"Caldwell Lab", new Integer(0),"234 W 18th Ave, \nColumbus, OH 43210", "default_no_logo.png", 200.0 ));
         ITEMS.add(new DummyItem(Integer.toString(5),"Smith Lab", new Integer(0),"174 W 18th Ave, \nColumbus, OH 43210", "default_no_logo.png", 200.0 ));
         ITEMS.add(new DummyItem(Integer.toString(6),"McPherson Chemical Lab", new Integer(0),"140 W 18th Ave #053, \nColumbus, OH 43210", "default_no_logo.png", 200.0 ));
-        ITEMS.add(new DummyItem(Integer.toString(7),"Hitchcock hall", new Integer(0),"2070 Neil Ave, \nColumbus, OH 43210", "default_no_logo.png", 200.0 ));
+        ITEMS.add(new DummyItem(Integer.toString(7),"Hitchcock Hall", new Integer(0),"2070 Neil Ave, \nColumbus, OH 43210", "default_no_logo.png", 200.0 ));
         ITEMS.add(new DummyItem(Integer.toString(8),"Physics Research Building", new Integer(0),"191 W Woodruff Ave, \nColumbus, OH 43210", "default_no_logo.png", 200.0 ));
         ITEMS.add(new DummyItem(Integer.toString(9),"Thompson Library", new Integer(0),"1858 Neil Ave, \nColumbus, OH 43210", "thompson.jpg", 200.0 ));
         ITEMS.add(new DummyItem(Integer.toString(10),"18th Avenue Library", new Integer(0),"175 W 18th Ave, \nColumbus, OH 43210", "avenue.jpg", 200.0 ));
@@ -79,7 +79,7 @@ public class DummyContent {
 
         public void setCapacity(Integer capacity) {
             this.capacity = capacity;
-            this.percent = capacity/maxCap;
+            this.percent = capacity/maxCap*100.00;
         }
 
         public String getId() {

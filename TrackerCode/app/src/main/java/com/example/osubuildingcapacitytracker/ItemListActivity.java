@@ -41,6 +41,19 @@ import android.widget.Toast;
 
 import com.example.osubuildingcapacitytracker.dummy.DummyContent;
 
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.sql.Types;
+import java.sql.DriverManager;
+//import java.sql.ResultSet;
+import java.sql.SQLException;
+//import java.sql.Statement;
+import android.os.StrictMode;
+import android.content.pm.PackageManager;
+import android.Manifest;
+
 import java.util.ArrayList;
 import java.util.Dictionary;
 import java.util.HashMap;
@@ -89,6 +102,21 @@ public class ItemListActivity extends AppCompatActivity {
     private SimpleItemRecyclerViewAdapter simpleItemRecyclerViewAdapter;
     private HashMap<String, Integer> triggeredFences;
     private Boolean threadRun;
+
+    /**
+     * Variables for connecting to SQL Server
+     */
+    private TextView textView;
+
+    private static String ip = "73.72.169.39";
+    private static String port = "1433";
+    private static String Classes = "net.sourceforge.jtds.jdbc.Driver";
+    private static String database = "testDatabase";
+    private static String username = "anderson2943";
+    private static String password = "042190";
+    private static String url = "jdbc:jtds:sqlserver://"+ip+":"+port+"/"+database;
+
+    private Connection connection = null;
 
 
 
@@ -151,6 +179,7 @@ public class ItemListActivity extends AppCompatActivity {
                     //update ui
                     simpleItemRecyclerViewAdapter.updateCapacity(loc, cap);
                 }
+                //increment function of loc triggeredFences.getValue(loc);
             }else if(intent.getAction().equals("UPDATE_EXIT")){
                 if(triggeredFences.containsKey(loc)){
                     if(triggeredFences.size()>1&&triggeredFences.get(loc).equals(new Integer(1))){ //more than 1 entry, update cap
@@ -204,18 +233,35 @@ public class ItemListActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_item_list);
 
+        ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.INTERNET}, PackageManager.PERMISSION_GRANTED);
+        textView = findViewById(R.id.textView);
+
+        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        StrictMode.setThreadPolicy(policy);
+        try {
+            Class.forName(Classes);
+            connection = DriverManager.getConnection(url, username,password);
+            textView.setText("SUCCESS");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            textView.setText("ERROR");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            textView.setText("FAILURE");
+        }
+
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         toolbar.setTitle(getTitle());
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+        /*fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
             }
-        });
+        });*/
 
         if (findViewById(R.id.item_detail_container) != null) {
             // The detail container view will be present only in the
@@ -300,8 +346,12 @@ public class ItemListActivity extends AppCompatActivity {
         //TODO update list from server data
         capacity = new HashMap<>();
         for(String entry: landmarks.keySet()){
-            capacity.put(entry, new Integer(0));
+            int cap = getCurrentBuildingCapacity(entry);
+            capacity.put(entry, cap);
+            simpleItemRecyclerViewAdapter.updateCapacity(entry, cap);
+            Log.d("refreshButton", "got value: " + getCurrentBuildingCapacity(entry));
         }
+
 
         //okay so here we need to populate the geofenceList. I want to do this in a new thread that we can put to sleep and wake up
         geofenceList = new ArrayList<>();
@@ -320,6 +370,68 @@ public class ItemListActivity extends AppCompatActivity {
         geofencingClient = LocationServices.getGeofencingClient(this);
         //startlocationupdates() moved to onStart() method
         initPermissionsCheck(Manifest.permission.ACCESS_BACKGROUND_LOCATION, MY_PERMISSION_REQ_BACK_LOC);
+    }
+
+    /*public void refreshButton(View view){
+        if (connection == null){
+            textView.setText("SQL Query Failed");
+            return;
+        }
+
+        try {
+            CallableStatement callableStatement = connection.prepareCall("{call GetBuildingCapacity(?,?)}");
+            callableStatement.setString(1, "buildingName");
+            callableStatement.registerOutParameter(2, Types.INTEGER);
+            callableStatement.execute();
+            callableStatement.getMoreResults();
+            int intOutput = callableStatement.getInt(2);
+            textView.setText(Integer.toString(intOutput));
+            Log.d("refreshButton", "got value: " + intOutput);
+            callableStatement.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }*/
+
+    public void refreshButton(View view){
+        if (connection!=null){
+            Statement statement = null;
+            try {
+                statement = connection.createStatement();
+                ResultSet resultSet = statement.executeQuery("SELECT Current_Capacity FROM buildingTable WHERE Building_Name = '18th Avenue Library'");
+                while (resultSet.next()){
+                    textView.setText(resultSet.getString(1));
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        else {
+            textView.setText("Connection is null");
+        }
+    }
+
+    public int getCurrentBuildingCapacity(String building){
+        if (connection!=null){
+            Statement statement = null;
+            try {
+                statement = connection.createStatement();
+                String query = String.format("SELECT Current_Capacity FROM buildingTable WHERE Building_Name = '%s'", building);
+                ResultSet resultSet = statement.executeQuery(query);
+                Log.d("refreshButton", "got query: " + query);
+                //Log.d("refreshButton", "got value: " + resultSet.getString(1));
+                while (resultSet.next()){
+                    return Integer.parseInt(resultSet.getString(1));
+                }
+
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        else {
+            textView.setText("Connection is null");
+        }
+        return 5;
     }
 
     class locThread extends Thread {
