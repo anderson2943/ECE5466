@@ -9,6 +9,8 @@ import android.widget.RadioButton;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import java.util.Random;
+
 public class MainActivity extends AppCompatActivity {
 
     ArrayList<RadioButton> buttonlist = new ArrayList<>(Arrays.asList((RadioButton)findViewById(R.id.radioButton),
@@ -33,14 +35,62 @@ public class MainActivity extends AppCompatActivity {
             (RadioButton)findViewById(R.id.radioButton47),(RadioButton)findViewById(R.id.radioButton48),
             (RadioButton)findViewById(R.id.radioButton49),(RadioButton)findViewById(R.id.radioButton50)));
 
+    final ArrayList<Integer> queue = new ArrayList<>();
+
+    Thread1 thread1;
+    Thread2 thread2;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         buttonlist = new ArrayList<>();
         buttonlist.add((RadioButton)findViewById(R.id.radioButton));
+        thread1.run();
+        thread2.run();
 
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        int queueSize = queue.size();
+    }
+
+    public void higher(View view){
+        thread1.setPriority(Thread.MAX_PRIORITY);
+        thread2.setPriority(Thread.MIN_PRIORITY);
+    }
+
+    public void lower(View view){
+        thread1.setPriority(Thread.MIN_PRIORITY);
+        thread2.setPriority(Thread.MAX_PRIORITY);
+    }
+
+    private class Thread1 extends Thread {
+        @Override
+        public void run() {
+            super.run();
+            Random rand = new Random();
+            while(true) {
+                queue.add(rand.nextInt(10));
+            }
+        }
+    };
+
+
+    private class Thread2 extends Thread {
+        @Override
+        public void run() {
+            super.run();
+            while(true) {
+                int index = queue.size() - 1;
+                queue.remove(index);
+            }
+        }
+    };
+
 
 
 
