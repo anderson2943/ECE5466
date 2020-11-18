@@ -40,6 +40,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="top|end"
         android:layout_margin="@dimen/fab_margin"
+        android:onClick="refreshButton"
         app:srcCompat="@android:drawable/ic_popup_sync" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -59,5 +60,13 @@
         app:layout_anchor="@+id/frameLayout"
         app:layout_anchorGravity="bottom|center"
         app:srcCompat="@drawable/osulogo" />
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="78dp"
+        android:layout_height="wrap_content"
+        android:text="TextView"
+        app:layout_anchor="@+id/osuLogo"
+        app:layout_anchorGravity="start|bottom" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
