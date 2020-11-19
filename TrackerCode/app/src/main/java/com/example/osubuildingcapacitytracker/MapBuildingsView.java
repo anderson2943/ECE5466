@@ -5,6 +5,8 @@ import androidx.fragment.app.FragmentActivity;
 
 import android.app.Activity;
 import android.app.Fragment;
+import android.content.ClipData;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -27,14 +29,23 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import static com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_YELLOW;
 
 
 public class MapBuildingsView extends FragmentActivity implements OnMapReadyCallback{
 
+
     private GoogleMap mMap;
     private LatLngBounds.Builder builder;
     private MapView mapView;
+
+
+    HashMap<String, Integer> capacity;
+    double latitude;
+    double longitude;
 
     //@Override
     //public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -56,6 +67,11 @@ public class MapBuildingsView extends FragmentActivity implements OnMapReadyCall
         SupportMapFragment mMapFragment = SupportMapFragment.newInstance();
         mMapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mMapFragment.getMapAsync(this);
+
+        Intent intent = getIntent();
+         capacity = (HashMap<String, Integer>) intent.getSerializableExtra("hashMap");
+         latitude = intent.getDoubleExtra("latitude", latitude);
+         longitude = intent.getDoubleExtra("longitude", longitude);
     }
 
     /**
@@ -73,7 +89,7 @@ public class MapBuildingsView extends FragmentActivity implements OnMapReadyCall
 
         builder = new LatLngBounds.Builder();
 
-        LatLng userPoint = new LatLng(40.004840, -83.012440);
+        LatLng userPoint = new LatLng(latitude, longitude);
         MarkerOptions user = new MarkerOptions().position(userPoint).title("You are Here").icon(BitmapDescriptorFactory.defaultMarker(HUE_YELLOW));
         mMap.addMarker(user);
         // builder.include(dreeseLab.getPosition());
@@ -83,73 +99,73 @@ public class MapBuildingsView extends FragmentActivity implements OnMapReadyCall
         // Add a markers at OSU building locations
 
         LatLng dreeseLabPoint = new LatLng(40.002300, -83.015877);
-        MarkerOptions dreeseLab = new MarkerOptions().position(dreeseLabPoint).title("Dreese Lab").snippet("100 out of 200");
+        MarkerOptions dreeseLab = new MarkerOptions().position(dreeseLabPoint).title("Dreese Lab").snippet(capacity.get("Dreese Lab") + " out of 200");
         mMap.addMarker(dreeseLab);
         // builder.include(dreeseLab.getPosition());
         builder.include(dreeseLabPoint);
 
         LatLng bakerSysPoint = new LatLng(40.001572, -83.015877);
-        MarkerOptions bakerSys = new MarkerOptions().position(bakerSysPoint).title("Baker Systems Engr Bldg").snippet("100 out of 200");
+        MarkerOptions bakerSys = new MarkerOptions().position(bakerSysPoint).title("Baker Systems Engr Bldg").snippet(capacity.get("Baker Systems Engineering") + " out of 200");
         mMap.addMarker(bakerSys);
         builder.include(bakerSysPoint);
 
         LatLng journalismPoint = new LatLng(40.002000, -83.015160);
-        MarkerOptions journalism = new MarkerOptions().position(journalismPoint).title("Journalism Bldg").snippet("100 out of 200");
+        MarkerOptions journalism = new MarkerOptions().position(journalismPoint).title("Journalism Bldg").snippet(capacity.get("Journalism Building") + " out of 200");
         mMap.addMarker(journalism);
         builder.include(journalismPoint);
 
         LatLng caldwellLabPoint = new LatLng(40.0024, -83.0150);
-        MarkerOptions caldwellLab = new MarkerOptions().position(caldwellLabPoint).title("Caldwell Lab").snippet("100 out of 200");
+        MarkerOptions caldwellLab = new MarkerOptions().position(caldwellLabPoint).title("Caldwell Lab").snippet(capacity.get("Caldwell Lab") + " out of 200");
         mMap.addMarker(caldwellLab);
         builder.include(caldwellLabPoint);
 
         LatLng smithLabPoint = new LatLng(40.002110, -83.013190);
-        MarkerOptions smithLab = new MarkerOptions().position(smithLabPoint).title("Smith Lab").snippet("100 out of 200");
+        MarkerOptions smithLab = new MarkerOptions().position(smithLabPoint).title("Smith Lab").snippet(capacity.get("Smith Lab") + " out of 200");
         mMap.addMarker(smithLab);
         builder.include(smithLabPoint);
 
         LatLng mcphersonChemPoint = new LatLng(40.00242, -83.012320);
-        MarkerOptions mcphersonChem = new MarkerOptions().position(mcphersonChemPoint).title("McPherson Chem Lab").snippet("100 out of 200");
+        MarkerOptions mcphersonChem = new MarkerOptions().position(mcphersonChemPoint).title("McPherson Chem Lab").snippet(capacity.get("McPherson Chemical Lab") + " out of 200");
         mMap.addMarker(mcphersonChem);
         builder.include(mcphersonChemPoint);
 
         LatLng hitchcockHallPoint = new LatLng(40.003799, -83.016029);
-        MarkerOptions hitchcockHall = new MarkerOptions().position(hitchcockHallPoint).title("Hitchcock Hall").snippet("100 out of 200");
+        MarkerOptions hitchcockHall = new MarkerOptions().position(hitchcockHallPoint).title("Hitchcock Hall").snippet(capacity.get("Hitchcock Hall") + " out of 200");
         mMap.addMarker(hitchcockHall);
         builder.include(hitchcockHallPoint);
 
         LatLng physicsResearchPoint = new LatLng(40.003930, -83.013330);
-        MarkerOptions physicsResearch = new MarkerOptions().position(physicsResearchPoint).title("Physics Research Bldg").snippet("100 out of 200");
+        MarkerOptions physicsResearch = new MarkerOptions().position(physicsResearchPoint).title("Physics Research Bldg").snippet(capacity.get("Physics Research Building") + " out of 200");
         mMap.addMarker(physicsResearch);
         builder.include(physicsResearchPoint);
 
         LatLng thompLibraryPoint = new LatLng(39.999241, -83.015060);
-        MarkerOptions thompLibrary = new MarkerOptions().position(thompLibraryPoint).title("Thompson Library").snippet("100 out of 200");
+        MarkerOptions thompLibrary = new MarkerOptions().position(thompLibraryPoint).title("Thompson Library").snippet(capacity.get("Thompson Library")+ " out of 1000");
         mMap.addMarker(thompLibrary);
         builder.include(thompLibraryPoint);
 
         LatLng avenue18Point = new LatLng(40.001919, -83.013588);
-        MarkerOptions avenue18 = new MarkerOptions().position(avenue18Point).title("18th Ave Library").snippet("100 out of 200");
+        MarkerOptions avenue18 = new MarkerOptions().position(avenue18Point).title("18th Ave Library").snippet(capacity.get("18th Avenue Library") + " out of 600");
         mMap.addMarker(avenue18);
         builder.include(avenue18Point);
 
         LatLng stillmanHallPoint = new LatLng(40.002159, -83.010582);
-        MarkerOptions stillmanHall = new MarkerOptions().position(stillmanHallPoint).title("Stillman Hall").snippet("100 out of 200");
+        MarkerOptions stillmanHall = new MarkerOptions().position(stillmanHallPoint).title("Stillman Hall").snippet(capacity.get("Stillman Hall") + " out of 200");
         mMap.addMarker(stillmanHall);
         builder.include(stillmanHallPoint);
 
         LatLng rpacPoint = new LatLng(39.9994, -83.0183);
-        MarkerOptions rpac = new MarkerOptions().position(rpacPoint).title("OSU RPAC").snippet("100 out of 200");
+        MarkerOptions rpac = new MarkerOptions().position(rpacPoint).title("OSU RPAC").snippet(capacity.get("OSU RPAC") + " out of 1000");
         mMap.addMarker(rpac);
         builder.include(rpacPoint);
 
         LatLng bolzHallPoint = new LatLng(40.002650, -83.015520);
-        MarkerOptions bolzHall = new MarkerOptions().position(bolzHallPoint).title("Bolz Hall").snippet("100 out of 200");
+        MarkerOptions bolzHall = new MarkerOptions().position(bolzHallPoint).title("Bolz Hall").snippet(capacity.get("Bolz Hall") + " out of 200");
         mMap.addMarker(bolzHall);
         builder.include(bolzHallPoint);
 
         LatLng knowltonHallPoint = new LatLng(40.004010, -83.016080);
-        MarkerOptions knowltonHall = new MarkerOptions().position(knowltonHallPoint).title("Knowlton Hall").snippet("100 out of 200");
+        MarkerOptions knowltonHall = new MarkerOptions().position(knowltonHallPoint).title("Knowlton Hall").snippet(capacity.get("Knowlton Hall") + " out of 200");
         mMap.addMarker(knowltonHall);
         builder.include(knowltonHallPoint);
 

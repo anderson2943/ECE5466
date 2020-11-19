@@ -41,6 +41,7 @@ import android.widget.Toast;
 
 import com.example.osubuildingcapacitytracker.dummy.DummyContent;
 
+import java.io.Serializable;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -123,6 +124,9 @@ public class ItemListActivity extends AppCompatActivity {
     // Start map when map button clicked
     public void map(View view) {
         Intent intent = new Intent(ItemListActivity.this, com.example.osubuildingcapacitytracker.MapBuildingsView.class);
+        intent.putExtra("hashMap", (Serializable) capacity);
+        intent.putExtra("latitude", latitude);
+        intent.putExtra("longitude", longitude);
         ItemListActivity.this.startActivity(intent);
     }
 
