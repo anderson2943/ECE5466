@@ -365,6 +365,8 @@ public class ItemListActivity extends AppCompatActivity {
             //Log.d("refreshButton", "got value: " + getCurrentBuildingCapacity(entry));
         }
 
+        updateServerCapacity("Thompson Library", -1);
+
 
         //okay so here we need to populate the geofenceList. I want to do this in a new thread that we can put to sleep and wake up
         geofenceList = new ArrayList<>();
@@ -385,34 +387,12 @@ public class ItemListActivity extends AppCompatActivity {
         initPermissionsCheck(Manifest.permission.ACCESS_BACKGROUND_LOCATION, MY_PERMISSION_REQ_BACK_LOC);
     }
 
-    /*public void refreshButton(View view){
-        if (connection == null){
-            textView.setText("SQL Query Failed");
-            return;
-        }
-
-        try {
-            CallableStatement callableStatement = connection.prepareCall("{call GetBuildingCapacity(?,?)}");
-            callableStatement.setString(1, "buildingName");
-            callableStatement.registerOutParameter(2, Types.INTEGER);
-            callableStatement.execute();
-            callableStatement.getMoreResults();
-            int intOutput = callableStatement.getInt(2);
-            textView.setText(Integer.toString(intOutput));
-            Log.d("refreshButton", "got value: " + intOutput);
-            callableStatement.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }*/
-
     @RequiresApi(api = Build.VERSION_CODES.N)
     public void refresh(View view){
         for(String entry: landmarks.keySet()) {
             int cap = getCurrentBuildingCapacity(entry);
             capacity.replace(entry, cap);
             simpleItemRecyclerViewAdapter.updateCapacity(entry, cap);
-            //Log.d("refreshButton", "got value: " + cap);
         }
         simpleItemRecyclerViewAdapter.notifyDataSetChanged();
     }
@@ -432,7 +412,6 @@ public class ItemListActivity extends AppCompatActivity {
                     Log.d("refreshButton", "got value: " + cap);
                     return cap;
                 }
-
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -440,7 +419,29 @@ public class ItemListActivity extends AppCompatActivity {
         else {
             textView.setText("Connection is null");
         }
-        return 5;
+        return 0;
+    }
+
+    // building: building name
+    // value: 1 for inc, -1 for dec
+    public void updateServerCapacity(String building, int value){
+        if (connection == null){
+            textView.setText("SQL Query Failed");
+            return;
+        }
+        try {
+            CallableStatement callableStatement = connection.prepareCall("{call UpdateBuildingCapacity(?,?)}");
+            callableStatement.setString(1, building);
+            callableStatement.setInt(2, value);
+            callableStatement.execute();
+            callableStatement.getMoreResults();
+            int intOutput = callableStatement.getInt(2);
+            textView.setText(Integer.toString(intOutput));
+            Log.d("updateServerCapacity", "got value: " + intOutput);
+            callableStatement.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     class locThread extends Thread {
@@ -747,7 +748,6 @@ public class ItemListActivity extends AppCompatActivity {
                         mValues) {
                     if(item.toString().equals(name)){
                         item.setCapacity(cap);
-                        Log.i("UpdateCapacity", "cap is: " + cap);
                     }
                 }
             }
@@ -755,9 +755,6 @@ public class ItemListActivity extends AppCompatActivity {
                 //error handling code
                 Log.e("UpdateCapacity", "update content failed");
             }
-            //update here
-
-
         }
 
         @Override
