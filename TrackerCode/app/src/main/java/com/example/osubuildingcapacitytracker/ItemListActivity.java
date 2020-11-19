@@ -346,7 +346,7 @@ public class ItemListActivity extends AppCompatActivity {
         landmarks.put("Caldwell Lab", new Double[]{40.00128333, -83.01490930,38.3341, 200.0});
         landmarks.put("Smith Lab", new Double[]{40.002110, -83.013190,52.4051, 200.0});
         landmarks.put("McPherson Chemical Lab", new Double[]{40.00228419,-83.01417563,58.603, 200.0});
-        landmarks.put("Hitchcock hall", new Double[]{40.00364845,-83.01521900,44.0233, 200.0});
+        landmarks.put("Hitchcock Hall", new Double[]{40.00364845,-83.01521900,44.0233, 200.0});
         landmarks.put("Physics Research Building", new Double[]{40.00338546,-83.01418635,66.2825, 200.0});
         landmarks.put("Thompson Library", new Double[]{39.99930265993615,-83.01487305423194,55.5, 200.0});
         landmarks.put("18th Avenue Library", new Double[]{40.001653210743655,-83.01333614846641, 33.3, 200.0});
@@ -362,7 +362,7 @@ public class ItemListActivity extends AppCompatActivity {
             int cap = getCurrentBuildingCapacity(entry);
             capacity.put(entry, cap);
             simpleItemRecyclerViewAdapter.updateCapacity(entry, cap);
-            Log.d("refreshButton", "got value: " + getCurrentBuildingCapacity(entry));
+            //Log.d("refreshButton", "got value: " + getCurrentBuildingCapacity(entry));
         }
 
 
@@ -406,25 +406,19 @@ public class ItemListActivity extends AppCompatActivity {
         }
     }*/
 
-    public void refreshButton(View view){
-        if (connection!=null){
-            Statement statement = null;
-            try {
-                statement = connection.createStatement();
-                ResultSet resultSet = statement.executeQuery("SELECT Current_Capacity FROM buildingTable WHERE Building_Name = '18th Avenue Library'");
-                while (resultSet.next()){
-                    textView.setText(resultSet.getString(1));
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    public void refresh(View view){
+        for(String entry: landmarks.keySet()) {
+            int cap = getCurrentBuildingCapacity(entry);
+            capacity.replace(entry, cap);
+            simpleItemRecyclerViewAdapter.updateCapacity(entry, cap);
+            //Log.d("refreshButton", "got value: " + cap);
         }
-        else {
-            textView.setText("Connection is null");
-        }
+        simpleItemRecyclerViewAdapter.notifyDataSetChanged();
     }
 
     public int getCurrentBuildingCapacity(String building){
+        int cap;
         if (connection!=null){
             Statement statement = null;
             try {
@@ -432,9 +426,11 @@ public class ItemListActivity extends AppCompatActivity {
                 String query = String.format("SELECT Current_Capacity FROM buildingTable WHERE Building_Name = '%s'", building);
                 ResultSet resultSet = statement.executeQuery(query);
                 Log.d("refreshButton", "got query: " + query);
-                //Log.d("refreshButton", "got value: " + resultSet.getString(1));
+
                 while (resultSet.next()){
-                    return Integer.parseInt(resultSet.getString(1));
+                    cap = Integer.parseInt(resultSet.getString(1));
+                    Log.d("refreshButton", "got value: " + cap);
+                    return cap;
                 }
 
             } catch (SQLException e) {
@@ -746,24 +742,14 @@ public class ItemListActivity extends AppCompatActivity {
         }
 
         public void updateCapacity(String name, int cap){
-            //use onviewadded to make list with teh views attached to strings of the names
-            //make new method in adapter to update
-            //Object[] viewPos = viewHolders.get(name);
-            //holder.getLayoutPosition();
             try{
                 for (DummyContent.DummyItem item :
                         mValues) {
                     if(item.toString().equals(name)){
                         item.setCapacity(cap);
+                        Log.i("UpdateCapacity", "cap is: " + cap);
                     }
                 }
-                //DummyContent.DummyItem dummyItem = mValues.get((Integer) viewPos[1]);
-                //dummyItem.setCapacity(cap);
-                //ViewHolder holder = (ViewHolder)viewPos[0];
-
-                //holder.mContentView.setText(dummyItem.getInfo());
-                //holder.mIdView.setText(dummyItem.getPercent());
-                //holder.notify();
             }
             catch (Exception e){
                 //error handling code

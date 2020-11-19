@@ -93,7 +93,7 @@ public class DummyContent {
             return maxCap;
         }
         public String getPercent(){
-            DecimalFormat percentFormat = new DecimalFormat("0.##");
+            DecimalFormat percentFormat = new DecimalFormat("0.#");
             return percentFormat.format(percent)+"%";
         }
         public String getInfo(){
