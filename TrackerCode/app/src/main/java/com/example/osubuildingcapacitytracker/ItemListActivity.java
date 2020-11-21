@@ -115,16 +115,30 @@ public class ItemListActivity extends AppCompatActivity {
     private static String database = "testDatabase";
     private static String username = "anderson2943";
     private static String password = "042190";
-    private static String url = "jdbc:jtds:sqlserver://"+ip+":"+port+"/"+database;
+    private static String url = "jdbc:jtds:sqlserver://" + ip + ":" + port + "/" + database;
 
     private Connection connection = null;
 
 
-
     // Start map when map button clicked
+    @RequiresApi(api = Build.VERSION_CODES.M)
     public void map(View view) {
         Intent intent = new Intent(ItemListActivity.this, com.example.osubuildingcapacitytracker.MapBuildingsView.class);
         intent.putExtra("hashMap", (Serializable) capacity);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, MY_PERMISSION_REQ_FINE_LOC);
+            requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, MY_PERMISSION_REQ_FINE_LOC);
+        }
+        //Double lat = latitude;
+       // Double lon = longitude;
+        if(fusedLocationProviderClient!=null){
+            //Location location = fusedLocationProviderClient.getLastLocation();
+
+            Log.i("startmap: ", "got last loc");
+
+        }
+        Log.i("latitude: ", Double.toString(latitude));
+        Log.i("longitude: ", Double.toString(longitude));
         intent.putExtra("latitude", latitude);
         intent.putExtra("longitude", longitude);
         ItemListActivity.this.startActivity(intent);
@@ -272,6 +286,7 @@ public class ItemListActivity extends AppCompatActivity {
         StrictMode.setThreadPolicy(policy);
         try {
             Class.forName(Classes);
+            DriverManager.setLoginTimeout(2);
             connection = DriverManager.getConnection(url, username,password);
             textView.setText("SUCCESS");
         } catch (ClassNotFoundException e) {
@@ -315,8 +330,8 @@ public class ItemListActivity extends AppCompatActivity {
         geofenceClientStarted = false;
 
         locationRequest = new LocationRequest();
-        locationRequest.setInterval(7500); //in ms
-        locationRequest.setFastestInterval(5000);
+        locationRequest.setInterval(750); //in ms
+        locationRequest.setFastestInterval(200);
         locationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
 
         //initialize location client

@@ -16,9 +16,10 @@
 
     Alternatively, follow the directions here:
     https://developers.google.com/maps/documentation/android/start#get-key
-
+    AIzaSyAE_T_NQCNhWLYhAx4i1CLHpO5Zu9e-cIs
+    AIzaSyAGTEjj8Qwyo_9OL5_pxNWi9WpIFuPINn0
     Once you have your key (it starts with "AIza"), replace the "google_maps_key"
     string in this file.
     -->
-    <string name="AIzaSyAGTEjj8Qwyo_9OL5_pxNWi9WpIFuPINn0" templateMergeStrategy="preserve" translatable="false">AIzaSyAGTEjj8Qwyo_9OL5_pxNWi9WpIFuPINn0</string>
+    <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">AIzaSyAGTEjj8Qwyo_9OL5_pxNWi9WpIFuPINn0</string>
 </resources>
