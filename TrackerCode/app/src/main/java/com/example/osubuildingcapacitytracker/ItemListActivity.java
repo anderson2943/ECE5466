@@ -584,9 +584,6 @@ public class ItemListActivity extends AppCompatActivity {
             callableStatement.setInt(2, value);
             callableStatement.execute();
             callableStatement.getMoreResults();
-            int intOutput = callableStatement.getInt(2);
-            textView.setText(Integer.toString(intOutput));
-            Log.d("updateServerCapacity", "got value: " + intOutput);
             callableStatement.close();
         } catch (SQLException e) {
             e.printStackTrace();
