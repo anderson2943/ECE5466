@@ -97,7 +97,7 @@ public class ItemListActivity extends AppCompatActivity {
     public ArrayList<Geofence> geofenceList;
     private Map<String, Double[]> landmarks;
     private Map<String, Integer> capacity;
-    private Map<String, Double> distances;
+    private volatile Map<String, Double> distances;
     private Thread getCloseLandmarks;
     private boolean geofenceClientStarted;
     private DummyContent dummyContent = new DummyContent();
@@ -128,9 +128,9 @@ public class ItemListActivity extends AppCompatActivity {
     public void map(View view) {
         Intent intent = new Intent(ItemListActivity.this, com.example.osubuildingcapacitytracker.MapBuildingsView.class);
         intent.putExtra("hashMap", (Serializable) capacity);
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, MY_PERMISSION_REQ_FINE_LOC);
-            requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, MY_PERMISSION_REQ_FINE_LOC);
+            //requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, MY_PERMISSION_REQ_FINE_LOC);
         }
         //Double lat = latitude;
        // Double lon = longitude;
@@ -212,9 +212,9 @@ public class ItemListActivity extends AppCompatActivity {
                 }else{ // only one fence dwell, the current one
                     triggeredFences.replace(loc, new Integer(1));
                     //TODO increment server cap for entry.getKey() or closestBuilding, they should be strings of the same thing
-                    updateServerCapacity(closestBuilding, 1);
+                    updateServerCapacity(loc, 1);
                     //TODO then pull capacity data from server and do the following lines OR we do one big update at the end
-                    simpleItemRecyclerViewAdapter.updateCapacity(closestBuilding, getCurrentBuildingCapacity(closestBuilding));
+                    simpleItemRecyclerViewAdapter.updateCapacity(loc, getCurrentBuildingCapacity(closestBuilding));
                     //capacity.replace(loc,justPulledServerCap);
                     //update ui
                     //simpleItemRecyclerViewAdapter.updateCapacity(loc, justPulledServerCap);
@@ -278,7 +278,6 @@ public class ItemListActivity extends AppCompatActivity {
         }
     };
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -290,9 +289,20 @@ public class ItemListActivity extends AppCompatActivity {
         ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.INTERNET}, PackageManager.PERMISSION_GRANTED);
         textView = findViewById(R.id.textView);
 
+        locationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                super.onLocationResult(locationResult);
+                Location location = locationResult.getLastLocation();
+                latitude = location.getLatitude();
+                longitude = location.getLongitude();
+                accuracy = location.getAccuracy();
+            }
+        };
+
         locationRequest = new LocationRequest();
-        locationRequest.setInterval(750); //in ms
-        locationRequest.setFastestInterval(200);
+        locationRequest.setInterval(10); //in ms
+        locationRequest.setFastestInterval(0);
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
         //initialize location client
@@ -313,16 +323,7 @@ public class ItemListActivity extends AppCompatActivity {
                 requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, MY_PERMISSION_REQ_FINE_LOC);
             }
         }
-        locationCallback = new LocationCallback() {
-            @Override
-            public void onLocationResult(LocationResult locationResult) {
-                super.onLocationResult(locationResult);
-                Location location = locationResult.getLastLocation();
-                latitude = location.getLatitude();
-                longitude = location.getLongitude();
-                accuracy = location.getAccuracy();
-            }
-        };
+
 
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(policy);
@@ -412,6 +413,7 @@ public class ItemListActivity extends AppCompatActivity {
         //register receiver
         IntentFilter filter = new IntentFilter("UPDATE_DWELL");
         filter.addAction("UPDATE_EXIT");
+        filter.addAction("UPDATE_ENTER");
         registerReceiver(textBroadcastReceiver, filter);
 
         //initialize geofencing client
@@ -444,6 +446,7 @@ public class ItemListActivity extends AppCompatActivity {
                 return distance;
             }
 
+            @RequiresApi(api = Build.VERSION_CODES.N)
             @Override
             public void run() {
                 Log.i("Timer: ", "Starting loc thread, "+Double.toString(latitude)+" "+Double.toString(longitude));
@@ -453,16 +456,20 @@ public class ItemListActivity extends AppCompatActivity {
                     Double[] latlngrad = entry.getValue();
                     //check if building is within ~500 m of user
                     Double distance = Distance(latitude, latlngrad[0], longitude, latlngrad[1], 0.0, 0.0);
-                    distances.put(entry.getKey(), distance);
+                    if(distances.containsKey(entry.getKey())){
+                        distances.replace(entry.getKey(), distance);
+                    }else{
+                        distances.put(entry.getKey(), distance);
+                    }
                     Log.i(entry.getKey(), Double.toString(distance));
                     if (distance < 300.00) {
                         Log.i(entry.getKey(), " added");
                         float rad = entry.getValue()[2].floatValue();
-                        if(accuracy<=rad){
-                            Log.i("increasing radius", "from: "+Float.toString(rad)+"to "+Double.toString(rad+accuracy));
-                            rad += accuracy;
+                        if(accuracy<=rad&&rad>50){
+                            //Log.i("increasing radius", "from: "+Float.toString(rad)+"to "+Double.toString(rad+accuracy));
+                            rad += 20*accuracy;
                         }else{
-                            rad += 2*accuracy;
+                            rad += 30*accuracy;
                         }
                         Geofence temp = new Geofence.Builder()// Set the request ID of the geofence. This is a string to identify this
                                 // geofence.
@@ -492,12 +499,15 @@ public class ItemListActivity extends AppCompatActivity {
                     if(!geofenceList.isEmpty()){
                         geofenceList.clear(); //clear the list and then populate it again. This could make a race condition so sync it
                     }
+                    //TODO get rid of test place
+                    Geofence g = new Geofence.Builder().setRequestId("Building 2").setCircularRegion(39.988411,-83.028641,80).setExpirationDuration(Geofence.NEVER_EXPIRE)
+                            .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_DWELL | Geofence.GEOFENCE_TRANSITION_EXIT | Geofence.GEOFENCE_TRANSITION_ENTER).setLoiteringDelay(5000).build();
+                    geofenceList.add(g);
                     geofenceList.addAll(tempList);
                     updateGeofences();
                 }//end of sync
-
             }
-        }, 5000, 90000);
+        }, 5000, 120000);
         //getCloseLandmarks.start();
 
     }
@@ -722,9 +732,10 @@ public class ItemListActivity extends AppCompatActivity {
     public void updateGeofences(){
 
         if(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED ) {
-            if(!geofenceClientStarted) {
+            if(geofencingClient==null) {
                 geofencingClient = LocationServices.getGeofencingClient(this);
                 geofenceClientStarted = true;
+                Log.i("inside weird if"," idk why we are here");
             }
             // I think because there's the FLAG_UPDATE_CURRENT on the pending intent, it will just update fences if they already exist
             //TODO get rid of the success listeners
@@ -766,7 +777,7 @@ public class ItemListActivity extends AppCompatActivity {
             }
         }
         //added in a check to see if client has been started already
-        updateGeofences();
+        //updateGeofences();
         //print
         Log.d("StartUpdates: ", "Updates started");
     }
@@ -779,23 +790,26 @@ public class ItemListActivity extends AppCompatActivity {
             startLocationUpdates();
             backgroundLocOn=false;
         }
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
         try {
             IntentFilter filter = new IntentFilter("UPDATE_DWELL");
             filter.addAction("UPDATE_EXIT");
+            filter.addAction("UPDATE_ENTER");
             registerReceiver(textBroadcastReceiver, filter);
+            Log.i("onresume: ", "textBR registered");
         }catch (Exception e){
 
         }
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-    }
-
-    @Override
     protected void onPause() {
-
+        unregisterReceiver(textBroadcastReceiver);
         super.onPause();
     }
 

@@ -17,7 +17,7 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
     //private final Handler handler;
 
     public GeofenceBroadcastReceiver(){
-        //Log.e("GeofenceBR: ", "Created GBR");
+        Log.e("GeofenceBR: ", "Created GBR");
     }
 
     @Override
@@ -31,12 +31,10 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
             return;
         }
         int geofenceTransition = geofencingEvent.getGeofenceTransition();
-        if(geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER){
-            Log.i("fence entered ", "");
-        }
+
         // Test that the reported transition was of interest.
         if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_DWELL ||
-                geofenceTransition == Geofence.GEOFENCE_TRANSITION_EXIT ) {
+                geofenceTransition == Geofence.GEOFENCE_TRANSITION_EXIT || geofenceTransition==Geofence.GEOFENCE_TRANSITION_ENTER) {
             Toast.makeText(context, "geofence triggered", Toast.LENGTH_SHORT).show();
             // Get the geofences that were triggered. A single event can trigger
             // multiple geofences.
@@ -52,6 +50,13 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                     textIntent.putExtra("increment", 1);
                     context.sendBroadcast(textIntent);
                     Log.d("GeofenceBR: ", name+" dwell transition");
+                }else if(geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER){
+                    // Log it, but don't do anything else
+                    Log.e("GeofenceBR: ", "Entering geofence");
+                    Intent textIntent = new Intent("UPDATE_ENTER");
+                    textIntent.putExtra("loc", name);
+                    textIntent.putExtra("increment", 0);
+                    context.sendBroadcast(textIntent);
                 }else{
                     //leaving geofence
                     Intent textIntent = new Intent("UPDATE_EXIT");
@@ -65,13 +70,7 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
             // Send notification and log the transition details.
             //sendNotification(geofenceTransitionDetails);
             //
-        } else if(geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER){
-            // Log it, but don't do anything else
-            Log.e("GeofenceBR: ", "Entering geofence");
         }
 
     }
-
-
-
 }
