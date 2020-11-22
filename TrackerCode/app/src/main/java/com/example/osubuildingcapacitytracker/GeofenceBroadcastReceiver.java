@@ -31,7 +31,9 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
             return;
         }
         int geofenceTransition = geofencingEvent.getGeofenceTransition();
-
+        if(geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER){
+            Log.i("fence entered ", "");
+        }
         // Test that the reported transition was of interest.
         if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_DWELL ||
                 geofenceTransition == Geofence.GEOFENCE_TRANSITION_EXIT ) {

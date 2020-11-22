@@ -61,6 +61,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * An activity representing a list of Items. This activity
@@ -80,11 +82,12 @@ public class ItemListActivity extends AppCompatActivity {
     private double latitude;
     private double longitude;
     private double accuracy;
+    private Timer myTimer;
     private FusedLocationProviderClient fusedLocationProviderClient;
     private final int MY_PERMISSION_REQ_FINE_LOC = 101;
     private final int MY_PERMISSION_REQ_BACK_LOC = 201;
-    private final int GEOFENCE_EXPIRE = 60000 * 6; //in ms, so 5 mins
-    private final int THREAD_SLEEP = 60000 * 2; //in ms, so 6 mins
+    private final int GEOFENCE_EXPIRE = 60000*3; //in ms, so 2 mins
+    private final int THREAD_SLEEP = 60000*2; //in ms, so 2 mins
     private final int MY_REQ_CODE = 42;
     private LocationRequest locationRequest;
     private LocationCallback locationCallback;
@@ -154,7 +157,9 @@ public class ItemListActivity extends AppCompatActivity {
             //textView.setText(intent.getStringExtra("loc"));
             //Decide what to do with an intent here, like update UI or change a variable
             String loc = intent.getStringExtra("loc");
+            Toast.makeText(context, loc+" fence triggered", Toast.LENGTH_LONG).show();
             if(intent.getAction().equals("UPDATE_DWELL")){
+                Log.i("DWELL: ", loc );
                 //intent from geofence
                 String closestBuilding = "";
                 Double closestDistance = distances.get(loc);
@@ -278,9 +283,46 @@ public class ItemListActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_item_list);
+        //check initial permissions are granted
+        //initPermissionsCheck(); was checking really often...
+        initPermissionsCheck(Manifest.permission.ACCESS_FINE_LOCATION, MY_PERMISSION_REQ_FINE_LOC);
 
         ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.INTERNET}, PackageManager.PERMISSION_GRANTED);
         textView = findViewById(R.id.textView);
+
+        locationRequest = new LocationRequest();
+        locationRequest.setInterval(750); //in ms
+        locationRequest.setFastestInterval(200);
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+
+        //initialize location client
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            fusedLocationProviderClient.getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                @Override
+                public void onSuccess(Location location) {
+                    if (location != null) {
+                        latitude = location.getLatitude();
+                        longitude = location.getLongitude();
+                        accuracy = location.getAccuracy();
+                    }
+                }
+            });
+        } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, MY_PERMISSION_REQ_FINE_LOC);
+            }
+        }
+        locationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                super.onLocationResult(locationResult);
+                Location location = locationResult.getLastLocation();
+                latitude = location.getLatitude();
+                longitude = location.getLongitude();
+                accuracy = location.getAccuracy();
+            }
+        };
 
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(policy);
@@ -317,51 +359,15 @@ public class ItemListActivity extends AppCompatActivity {
             // activity should be in two-pane mode.
             mTwoPane = true;
         }
-        //check initial permissions are granted
-        //initPermissionsCheck(); was checking really often...
-        initPermissionsCheck(Manifest.permission.ACCESS_FINE_LOCATION, MY_PERMISSION_REQ_FINE_LOC);
 
 
-        threadRun = true;
         recyclerView = findViewById(R.id.item_list);
         assert recyclerView != null;
         setupRecyclerView((RecyclerView) recyclerView);
         backgroundLocOn = false;
         geofenceClientStarted = false;
 
-        locationRequest = new LocationRequest();
-        locationRequest.setInterval(750); //in ms
-        locationRequest.setFastestInterval(200);
-        locationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
 
-        //initialize location client
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            fusedLocationProviderClient.getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
-                @Override
-                public void onSuccess(Location location) {
-                    if (location != null) {
-                        latitude = location.getLatitude();
-                        longitude = location.getLongitude();
-                        accuracy = location.getAccuracy();
-                    }
-                }
-            });
-        } else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, MY_PERMISSION_REQ_FINE_LOC);
-            }
-        }
-        locationCallback = new LocationCallback() {
-            @Override
-            public void onLocationResult(LocationResult locationResult) {
-                super.onLocationResult(locationResult);
-                Location location = locationResult.getLastLocation();
-                latitude = location.getLatitude();
-                longitude = location.getLongitude();
-                accuracy = location.getAccuracy();
-            }
-        };
         distances = new HashMap<>();
         triggeredFences = new HashMap<>();
         //populate landmarks list
@@ -401,25 +407,123 @@ public class ItemListActivity extends AppCompatActivity {
 
         //okay so here we need to populate the geofenceList. I want to do this in a new thread that we can put to sleep and wake up
         geofenceList = new ArrayList<>();
-        getCloseLandmarks = new locThread();
+        //getCloseLandmarks = new locThread();
 
         //register receiver
-        IntentFilter filter = new IntentFilter("UPDATE_UI");
-        filter.addAction("UPDATE_CAPACITY");
+        IntentFilter filter = new IntentFilter("UPDATE_DWELL");
+        filter.addAction("UPDATE_EXIT");
         registerReceiver(textBroadcastReceiver, filter);
-
-        //end of thread declaration
-        //start the thread
-        getCloseLandmarks.start();
 
         //initialize geofencing client
         geofencingClient = LocationServices.getGeofencingClient(this);
         //startlocationupdates() moved to onStart() method
         initPermissionsCheck(Manifest.permission.ACCESS_BACKGROUND_LOCATION, MY_PERMISSION_REQ_BACK_LOC);
+
+        //end of thread declaration
+        //start the thread
+        myTimer = new Timer();
+        myTimer.schedule(new TimerTask() {
+
+            public double Distance(double lat1, double lat2, double lon1,
+                                   double lon2, double el1, double el2) {
+
+                final int R = 6371000; // Radius of the earth
+
+                double latDistance = Math.toRadians(lat2 - lat1);
+                double lonDistance = Math.toRadians(lon2 - lon1);
+                double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                        + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                        * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+                double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                double distance = R * c; // convert to meters
+
+                //double height = el1 - el2;
+
+                //distance = Math.pow(distance, 2) + Math.pow(height, 2);
+
+                return distance;
+            }
+
+            @Override
+            public void run() {
+                Log.i("Timer: ", "Starting loc thread, "+Double.toString(latitude)+" "+Double.toString(longitude));
+                ArrayList<Geofence> tempList = new ArrayList<>();
+
+                for (Map.Entry<String, Double[]> entry : landmarks.entrySet()) {
+                    Double[] latlngrad = entry.getValue();
+                    //check if building is within ~500 m of user
+                    Double distance = Distance(latitude, latlngrad[0], longitude, latlngrad[1], 0.0, 0.0);
+                    distances.put(entry.getKey(), distance);
+                    Log.i(entry.getKey(), Double.toString(distance));
+                    if (distance < 300.00) {
+                        Log.i(entry.getKey(), " added");
+                        float rad = entry.getValue()[2].floatValue();
+                        if(accuracy<=rad){
+                            Log.i("increasing radius", "from: "+Float.toString(rad)+"to "+Double.toString(rad+accuracy));
+                            rad += accuracy;
+                        }else{
+                            rad += 2*accuracy;
+                        }
+                        Geofence temp = new Geofence.Builder()// Set the request ID of the geofence. This is a string to identify this
+                                // geofence.
+                                .setRequestId(entry.getKey())
+
+                                // Set the circular region of this geofence.
+                                .setCircularRegion(
+                                        latlngrad[0], latlngrad[1], rad
+                                )
+                                //.setNotificationResponsiveness()
+                                // Set the expiration duration of the geofence
+                                .setExpirationDuration(GEOFENCE_EXPIRE)
+
+                                // Set the transition types of interest
+                                .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_DWELL |
+                                        Geofence.GEOFENCE_TRANSITION_EXIT | Geofence.GEOFENCE_TRANSITION_ENTER)
+                                //set loitering delay in ms
+                                //TODO change this to a real value, set to 5s for testing
+                                .setLoiteringDelay(5000)
+                                // Create the geofence.
+                                .build();
+                        tempList.add(temp);
+                    }
+                }//end of for loop
+                synchronized (geofenceList) {
+                    Log.i("SyncGeofenceThread", tempList.toString());
+                    if(!geofenceList.isEmpty()){
+                        geofenceList.clear(); //clear the list and then populate it again. This could make a race condition so sync it
+                    }
+                    geofenceList.addAll(tempList);
+                    updateGeofences();
+                }//end of sync
+
+            }
+        }, 5000, 90000);
+        //getCloseLandmarks.start();
+
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     public void refresh(View view){
+        ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.INTERNET}, PackageManager.PERMISSION_GRANTED);
+        textView = findViewById(R.id.textView);
+        if(connection==null){
+            Toast t = Toast.makeText(this, "Trying to reconnect...", Toast.LENGTH_SHORT);
+            t.show();
+            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+            StrictMode.setThreadPolicy(policy);
+            try {
+                Class.forName(Classes);
+                DriverManager.setLoginTimeout(2);
+                connection = DriverManager.getConnection(url, username,password);
+                textView.setText("SUCCESS");
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+                textView.setText("ERROR");
+            } catch (SQLException e) {
+                e.printStackTrace();
+                textView.setText("FAILURE");
+            }
+        }
         for(String entry: landmarks.keySet()) {
             int cap = getCurrentBuildingCapacity(entry);
             capacity.replace(entry, cap);
@@ -430,17 +534,21 @@ public class ItemListActivity extends AppCompatActivity {
 
     public int getCurrentBuildingCapacity(String building){
         int cap;
+        //added in a try to get connection again
+        ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.INTERNET}, PackageManager.PERMISSION_GRANTED);
+        textView = findViewById(R.id.textView);
+
         if (connection!=null){
             Statement statement = null;
             try {
                 statement = connection.createStatement();
                 String query = String.format("SELECT Current_Capacity FROM buildingTable WHERE Building_Name = '%s'", building);
                 ResultSet resultSet = statement.executeQuery(query);
-                Log.d("refreshButton", "got query: " + query);
+                //Log.d("refreshButton", "got query: " + query);
 
                 while (resultSet.next()){
                     cap = Integer.parseInt(resultSet.getString(1));
-                    Log.d("refreshButton", "got value: " + cap);
+                    //Log.d("refreshButton", "got value: " + cap);
                     return cap;
                 }
             } catch (SQLException e) {
@@ -478,14 +586,14 @@ public class ItemListActivity extends AppCompatActivity {
     class locThread extends Thread {
         @Override
         public void run() {
-            while (threadRun) {
+
                 ArrayList<Geofence> tempList = new ArrayList<>();
                 for (Map.Entry<String, Double[]> entry : landmarks.entrySet()) {
                     Double[] latlngrad = entry.getValue();
                     //check if building is within ~1000 ft of user
                     Double distance = Distance(latitude, latlngrad[0], longitude, latlngrad[1], 0.0, 0.0);
                     distances.put(entry.getKey(), distance);
-                    if (distance < 300) {
+                    if (distance < 1000) {
                         Geofence temp = new Geofence.Builder()// Set the request ID of the geofence. This is a string to identify this
                                 // geofence.
                                 .setRequestId(entry.getKey())
@@ -509,12 +617,13 @@ public class ItemListActivity extends AppCompatActivity {
                         tempList.add(temp);
                     }
                 }//end of for loop
-                synchronized (this) {
+                synchronized (geofenceList) {
                     Log.i("SyncGeofenceThread", "inside the sync");
                     geofenceList.clear(); //clear the list and then populate it again. This could make a race condition so sync it
                     geofenceList.addAll(tempList);
                     updateGeofences();
                 }//end of sync
+            /*
                 try {
                     // thread to sleep for 5 minutes. reminder that geofences expire after 6 minutes
                     Log.i("SyncGeofenceThread", "putting thread to sleep");
@@ -524,7 +633,9 @@ public class ItemListActivity extends AppCompatActivity {
                 } catch (Exception e) {
                     Log.e("AddGeofenceThread", e.toString());
                 }
-            }
+
+             */
+
         }
 
         /**
@@ -609,6 +720,7 @@ public class ItemListActivity extends AppCompatActivity {
     }
 
     public void updateGeofences(){
+
         if(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED ) {
             if(!geofenceClientStarted) {
                 geofencingClient = LocationServices.getGeofencingClient(this);
@@ -665,38 +777,56 @@ public class ItemListActivity extends AppCompatActivity {
         if(backgroundLocOn){ //if the app is pulled back into foreground
             stopLocationUpdatesInBackground();
             startLocationUpdates();
+            backgroundLocOn=false;
         }
+        try {
+            IntentFilter filter = new IntentFilter("UPDATE_DWELL");
+            filter.addAction("UPDATE_EXIT");
+            registerReceiver(textBroadcastReceiver, filter);
+        }catch (Exception e){
 
+        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        registerReceiver(textBroadcastReceiver, new IntentFilter("UPDATE_UI"));
-
     }
 
     @Override
     protected void onPause() {
-        unregisterReceiver(textBroadcastReceiver);
+
         super.onPause();
     }
 
     @Override
     protected void onStop() {
-        super.onStop();
+        super.onStop();//
+
         if(!backgroundLocOn){ //if app is going sleepys
             stopLocationUpdates();
             startLocationUpdatesInBackground();
+            backgroundLocOn=true;
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        try {
+            unregisterReceiver(textBroadcastReceiver);
+        }catch (Exception e){
+
+        }
+
+        super.onDestroy();
     }
 
     private void startLocationUpdatesInBackground() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             LocationRequest newlocationRequest = new LocationRequest();
-            newlocationRequest.setInterval(60000); //in ms
+            newlocationRequest.setInterval(30000); //in ms
             newlocationRequest.setFastestInterval(10000);
-            newlocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+            newlocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
             fusedLocationProviderClient.requestLocationUpdates(newlocationRequest, getPendingBackgroundIntent());
         }else{
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
