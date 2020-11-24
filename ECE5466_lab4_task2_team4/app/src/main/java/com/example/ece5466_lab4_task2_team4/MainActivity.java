@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ArrayBlockingQueue;
 
 public class MainActivity extends AppCompatActivity {
@@ -23,7 +25,7 @@ public class MainActivity extends AppCompatActivity {
 
     Thread1 thread1;
     Thread2 thread2;
-
+    Boolean thread1High;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,12 +52,60 @@ public class MainActivity extends AppCompatActivity {
                 (RadioButton)findViewById(R.id.radioButton44), (RadioButton)findViewById(R.id.radioButton45),(RadioButton)findViewById(R.id.radioButton46),
                 (RadioButton)findViewById(R.id.radioButton47),(RadioButton)findViewById(R.id.radioButton48),
                 (RadioButton)findViewById(R.id.radioButton49),(RadioButton)findViewById(R.id.radioButton50)));
-        thread1 = new Thread1();
-        thread2 = new Thread2();
-        thread1.start();
-        thread2.start();
-        UIUpdateThread uiUpdate = new UIUpdateThread();
-        uiUpdate.start();
+        //thread1 = new Thread1();
+        //thread2 = new Thread2();
+       // thread1.start();
+       // thread2.start();
+        thread1High = true;
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        synchronized (buttonlist){
+                            int index = queue.size();
+                            Log.i("updateUI: ", "updating ui with index "+index);
+                            for(int i=0; i<buttonlist.size();i++){
+                                if(i<index){
+                                    buttonlist.get(i).setChecked(true);
+                                }else{
+                                    buttonlist.get(i).setChecked(false);
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }, 50, 500);
+        //UIUpdateThread uiUpdate = new UIUpdateThread();
+        //uiUpdate.start();
+        Timer timer2 = new Timer();
+        timer2.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                thread1 = new Thread1();
+                if(thread1High){
+                    thread1.setPriority(Thread.MAX_PRIORITY);
+                }else{
+                    thread1.setPriority(Thread.MIN_PRIORITY);
+                }
+                thread1.start();
+            }
+        }, 0, 200);
+        timer2.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                thread2 = new Thread2();
+                if(!thread1High){
+                    thread2.setPriority(Thread.MAX_PRIORITY);
+                }else{
+                    thread2.setPriority(Thread.MIN_PRIORITY);
+                }
+                thread2.start();
+            }
+        }, 0, 200);
     }
 
 
@@ -99,19 +149,20 @@ public class MainActivity extends AppCompatActivity {
     public void higher(View view){
         thread1.setPriority(Thread.MAX_PRIORITY);
         thread2.setPriority(Thread.MIN_PRIORITY);
-
+        thread1High = true;
     }
 
     public void lower(View view){
         thread1.setPriority(Thread.MIN_PRIORITY);
         thread2.setPriority(Thread.MAX_PRIORITY);
+        thread1High = false;
     }
 
     private class Thread1 extends Thread {
         @Override
         public void run() {
             super.run();
-            while (true) {
+            //while (true) {
                 //Heavy comp from task 1
                 int i = 0;
                 Random random = new Random();
@@ -138,9 +189,14 @@ public class MainActivity extends AppCompatActivity {
                 }
                 //enqueue a number
                 Random rand = new Random();
-                queue.add(rand.nextInt(10));
-                Log.i("thread1: ", "enqueing number");
-            }
+                try{
+                    queue.add(rand.nextInt(10));
+                    Log.i("thread1: ", "enqueing number");
+                }catch (Exception e ){
+                    Log.i("thread1: ", e.toString());
+                }
+
+          //  }
         }
 
 
@@ -151,7 +207,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void run() {
             super.run();
-            while (true) {
+            //while (true) {
                 //Heavy comp from task 1
                 int i = 0;
                 Random random = new Random();
@@ -178,12 +234,13 @@ public class MainActivity extends AppCompatActivity {
                 }
                 //dequeue a number
                 try {
+                    //queue.remove();
                     queue.take();
                     Log.i("thread2: ", "dequeing number");
-                } catch (InterruptedException e) {
+                } catch (Exception e) {
                     Log.e("dequeue: ", e.toString());
                 }
-            }
+            //}
         }
     };
 
