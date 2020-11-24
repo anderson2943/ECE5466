@@ -78,34 +78,10 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
             }
-        }, 50, 500);
-        //UIUpdateThread uiUpdate = new UIUpdateThread();
-        //uiUpdate.start();
-        Timer timer2 = new Timer();
-        timer2.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                thread1 = new Thread1();
-                if(thread1High){
-                    thread1.setPriority(Thread.MAX_PRIORITY);
-                }else{
-                    thread1.setPriority(Thread.MIN_PRIORITY);
-                }
-                thread1.start();
-            }
-        }, 0, 200);
-        timer2.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                thread2 = new Thread2();
-                if(!thread1High){
-                    thread2.setPriority(Thread.MAX_PRIORITY);
-                }else{
-                    thread2.setPriority(Thread.MIN_PRIORITY);
-                }
-                thread2.start();
-            }
-        }, 0, 200);
+        }, 50, 300);
+        UIUpdateThread uiUpdate = new UIUpdateThread();
+        uiUpdate.start();
+
     }
 
 
@@ -113,30 +89,31 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void run() {
             super.run();
-            while(true){
-                try {
-                    sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        synchronized (buttonlist){
-                            int index = queue.size();
-                            Log.i("updateUI: ", "updating ui with index "+index);
-                            for(int i=0; i<buttonlist.size();i++){
-                                if(i<index){
-                                    buttonlist.get(i).setChecked(true);
-                                }else{
-                                    buttonlist.get(i).setChecked(false);
-                                }
-                            }
-                        }
+            Timer timer2 = new Timer();
+            timer2.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    thread1 = new Thread1();
+                    if(thread1High){
+                        thread1.setPriority(Thread.MAX_PRIORITY);
+                    }else{
+                        thread1.setPriority(Thread.MIN_PRIORITY);
                     }
-                });
-            }
-
+                    thread1.start();
+                }
+            }, 0, 200);
+            timer2.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    thread2 = new Thread2();
+                    if(!thread1High){
+                        thread2.setPriority(Thread.MAX_PRIORITY);
+                    }else{
+                        thread2.setPriority(Thread.MIN_PRIORITY);
+                    }
+                    thread2.start();
+                }
+            }, 0, 200);
         }
     }
 
