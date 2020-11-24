@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Build;
@@ -106,6 +107,8 @@ public class ItemListActivity extends AppCompatActivity {
     private SimpleItemRecyclerViewAdapter simpleItemRecyclerViewAdapter;
     private HashMap<String, Integer> triggeredFences;
     private Boolean threadRun;
+    private SharedPreferences prefs;
+    private SharedPreferences.Editor editor;
 
     /**
      * Variables for connecting to SQL Server
@@ -157,7 +160,8 @@ public class ItemListActivity extends AppCompatActivity {
             //textView.setText(intent.getStringExtra("loc"));
             //Decide what to do with an intent here, like update UI or change a variable
             String loc = intent.getStringExtra("loc");
-            Toast.makeText(context, loc + " fence triggered", Toast.LENGTH_LONG).show();
+            HashMap<String, Integer> triggeredFencesCopy = new HashMap<>(triggeredFences);
+            //Toast.makeText(context, loc + " fence triggered", Toast.LENGTH_LONG).show();
             if (intent.getAction().equals("UPDATE_DWELL")) {
                 Log.i("DWELL: ", loc);
                 //intent from geofence
@@ -165,6 +169,7 @@ public class ItemListActivity extends AppCompatActivity {
                 Double closestDistance = distances.get(loc);
                 if (!triggeredFences.containsKey(loc)) {
                     triggeredFences.put(loc, new Integer(0));
+                    Log.i("Adding triggered fence ", loc);
                 }
                 for (Map.Entry entry : triggeredFences.entrySet()) {
                     if (!entry.getKey().equals(loc) && closestDistance > distances.get(entry.getKey())) {
@@ -173,36 +178,38 @@ public class ItemListActivity extends AppCompatActivity {
                     }
                 }
                 if (triggeredFences.size() > 1) { // could end up in 2 fences at a time
-                    //update values in map
-                    for (Map.Entry entry : triggeredFences.entrySet()) {
+                    Log.i("triggeredFences size ", Integer.toString(triggeredFences.size()));
+                    for (Map.Entry entry : triggeredFencesCopy.entrySet()) {
                         if (entry.getKey().equals(closestBuilding)) { //update val to 1
                             if (entry.getValue().equals(0)) {
+                                Log.i("Incrementing ",(String)entry.getKey());
                                 //new closest building!
                                 triggeredFences.replace((String) entry.getKey(), new Integer(1));
                                 //TODO increment server cap for entry.getKey() or closestBuilding, they should be strings of the same thing
                                 updateServerCapacity((String) entry.getKey(), 1);
                                 //TODO then pull capacity data from server and do the following lines OR we do one big update at the end
-                                simpleItemRecyclerViewAdapter.updateCapacity((String) entry.getKey(), getCurrentBuildingCapacity((String) entry.getKey()));
+                                int newCap = getCurrentBuildingCapacity((String) entry.getKey());
+                                simpleItemRecyclerViewAdapter.updateCapacity((String) entry.getKey(), newCap);
+                                capacity.replace(closestBuilding,newCap);
                                 simpleItemRecyclerViewAdapter.notifyDataSetChanged();
-                                //capacity.replace(closestBuilding,justPulledServerCap);
-                                //simpleItemRecyclerViewAdapter.updateCapacity(closestBuilding, justPulledServerCap);
+
                             } else {
                                 //already 1, no push needs to happen here
                                 //although we could pull if we want.
                             }
                         } else { //update num val to 0
                             if (!entry.getValue().equals(0)) {
+                                Log.i("Decrementing ",(String)entry.getKey());
                                 //fence already has 1 there, decrement the cap
                                 triggeredFences.replace((String) entry.getKey(), new Integer(0));
                                 //TODO decrement server cap for entry.getKey()
                                 updateServerCapacity((String) entry.getKey(), -1);
                                 //TODO pull capacity data from server and do the following lines OR we do one big update at the end
-                                simpleItemRecyclerViewAdapter.updateCapacity((String) entry.getKey(), getCurrentBuildingCapacity((String) entry.getKey()));
+                                int newCap = getCurrentBuildingCapacity((String) entry.getKey());
+                                simpleItemRecyclerViewAdapter.updateCapacity((String) entry.getKey(), newCap);
+                                capacity.replace((String)entry.getKey(),newCap);
                                 simpleItemRecyclerViewAdapter.notifyDataSetChanged();
-                                String temploc = (String) entry.getKey();
-                                //capacity.replace(temploc,justPulledServerCap);
-                                //update ui
-                                //simpleItemRecyclerViewAdapter.updateCapacity(temploc, justPulledServerCap);
+
                             } else {
                                 //already 0, nothing needs to be pushed
                             }
@@ -210,11 +217,19 @@ public class ItemListActivity extends AppCompatActivity {
                         }
                     }
                 } else { // only one fence dwell, the current one
-                    triggeredFences.replace(loc, new Integer(1));
-                    //TODO increment server cap for entry.getKey() or closestBuilding, they should be strings of the same thing
-                    updateServerCapacity(loc, 1);
-                    //TODO then pull capacity data from server and do the following lines OR we do one big update at the end
-                    simpleItemRecyclerViewAdapter.updateCapacity(loc, getCurrentBuildingCapacity(loc));
+                    Log.i("triggeredFences size ", Integer.toString(triggeredFences.size()));
+                    Log.i("fence: ", loc);
+                    if(triggeredFences.get(loc).equals(0)){ //value was zero, so we change it to 1 and increment
+                        triggeredFences.replace(loc, new Integer(1));
+                        //TODO increment server cap for entry.getKey() or closestBuilding, they should be strings of the same thing
+                        updateServerCapacity(loc, 1);
+                        //TODO then pull capacity data from server and do the following lines OR we do one big update at the end
+                        int newCap = getCurrentBuildingCapacity(loc);
+                        simpleItemRecyclerViewAdapter.updateCapacity(loc, newCap);
+                        capacity.replace(loc,newCap);
+                        simpleItemRecyclerViewAdapter.notifyDataSetChanged();
+                    }//else it's already 1 so we don't care
+
                     //capacity.replace(loc,justPulledServerCap);
                     //update ui
                     //simpleItemRecyclerViewAdapter.updateCapacity(loc, justPulledServerCap);
@@ -225,69 +240,97 @@ public class ItemListActivity extends AppCompatActivity {
                     //the structure here is a little different than above since the following if statement
                     //is a combination of two conditions
                     if (triggeredFences.size() > 1 && triggeredFences.get(loc).equals(new Integer(1))) {
+                        Log.i("triggeredFences size ", Integer.toString(triggeredFences.size()));
+                        Log.i("Decrementing ",loc);
                         //more than 1 entry, value was 1 so we need to find the new closest building
                         //means we decrement the server for loc, and increment for the new one
-                        triggeredFences.remove(loc);
+                        //triggeredFences.remove(loc);
                         //temp inits
                         String closestBuilding = loc;
                         Double closestDistance = distances.get(loc);
                         Boolean tempset = false;
                         for (Map.Entry entry : triggeredFences.entrySet()) {
-                            if (!tempset) {
+                            if (!tempset&&!entry.getKey().equals(loc)) {
                                 //init these to some valid variables in the set. First pass thru only
                                 tempset = true;
                                 closestBuilding = (String) entry.getKey();
                                 closestDistance = new Double(entry.getValue().toString());
                             }
-                            if (!entry.getKey().equals(loc) && closestDistance > distances.get(entry.getKey())) {
+                            if (!entry.getKey().equals(loc) && closestDistance >= distances.get(entry.getKey())) {
                                 closestDistance = distances.get(entry.getKey());
                                 closestBuilding = (String) entry.getKey();
                             }
                         }
+                        Log.i("Incrementing ",closestBuilding);
                         triggeredFences.replace(closestBuilding, new Integer(1));
                         //TODO decrement server for loc
                         updateServerCapacity(loc, -1);
                         //TODO increment server for closestBuilding
                         updateServerCapacity(closestBuilding, 1);
                         //TODO then pull capacity data from server for BOTH loc and closestBuilding and do the following lines OR we do one big update at the end
-                        simpleItemRecyclerViewAdapter.updateCapacity(loc, getCurrentBuildingCapacity(loc));
-                        simpleItemRecyclerViewAdapter.updateCapacity(closestBuilding, getCurrentBuildingCapacity(closestBuilding));
+                        int newCapLoc = getCurrentBuildingCapacity(loc);
+                        int newCapClosest = getCurrentBuildingCapacity(closestBuilding);
+                        capacity.replace(loc,newCapLoc);
+                        capacity.replace(closestBuilding,newCapClosest);
+                        simpleItemRecyclerViewAdapter.updateCapacity(loc, newCapLoc);
+                        simpleItemRecyclerViewAdapter.updateCapacity(closestBuilding, newCapClosest);
                         simpleItemRecyclerViewAdapter.notifyDataSetChanged();
-                        //capacity.replace(loc,newServerCap_loc);
-                        //simpleItemRecyclerViewAdapter.updateCapacity(loc, newServerCap_loc);
-                        //capacity.replace(closestBuilding,newServerCap_closestBuilding);
-                        //simpleItemRecyclerViewAdapter.updateCapacity(closestBuilding, newServerCap_closestBuilding);
-                    } else {
+
+                    } else if(triggeredFences.size() ==1){
                         if (triggeredFences.get(loc).equals(new Integer(1))) { //only one entry, decrement sever for loc
                             //the line below must go after this if check, otherwise we will get an error. But we could place it after the next else
-                            triggeredFences.remove(loc);
+                            //triggeredFences.remove(loc);
                             //TODO decrement server for loc
+                            Log.i("Decrementing ",loc);
                             updateServerCapacity(loc, -1);
                             //TODO then pull capacity data from server for loc and do the following lines OR we do one big update at the end
-                            simpleItemRecyclerViewAdapter.updateCapacity(loc, getCurrentBuildingCapacity(loc));
-                            //capacity.replace(loc,newServerCap_loc);
-                            //simpleItemRecyclerViewAdapter.updateCapacity(loc, newServerCap_loc);
+                            int newCapLoc = getCurrentBuildingCapacity(loc);
+                            simpleItemRecyclerViewAdapter.updateCapacity(loc, newCapLoc);
+                            capacity.replace(loc,newCapLoc);
+                            simpleItemRecyclerViewAdapter.notifyDataSetChanged();
+
                         } else {
-                            triggeredFences.remove(loc);
+                            //triggeredFences.remove(loc);
                             //the value was already zero, so we really don't care (nothing to do with server)
                         }
                     }
+                    triggeredFences.remove(loc);
                 }
             }
             //currently unused action for "UPDATE_CAPACITY"
         }
     };
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_item_list);
+        final String [] perms = {Manifest.permission.ACCESS_BACKGROUND_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.INTERNET, Manifest.permission.ACCESS_NETWORK_STATE};
+        if(checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)==PackageManager.PERMISSION_GRANTED){
+            Log.i("Permissions: ","GRANTED");
+        }else{
+            ActivityCompat.requestPermissions(this, perms, MY_PERMISSION_REQ_FINE_LOC);
+        }
+
+
         //check initial permissions are granted
         //initPermissionsCheck(); was checking really often...
-        initPermissionsCheck(Manifest.permission.ACCESS_BACKGROUND_LOCATION, MY_PERMISSION_REQ_BACK_LOC);
-        initPermissionsCheck(Manifest.permission.ACCESS_FINE_LOCATION, MY_PERMISSION_REQ_FINE_LOC);
-        final String [] perms = {Manifest.permission.ACCESS_BACKGROUND_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.INTERNET, Manifest.permission.ACCESS_NETWORK_STATE};
-        ActivityCompat.requestPermissions(this, perms, MY_REQ_CODE);
+        //initPermissionsCheck(Manifest.permission.ACCESS_BACKGROUND_LOCATION, MY_PERMISSION_REQ_BACK_LOC);
+        //initPermissionsCheck(Manifest.permission.ACCESS_FINE_LOCATION, MY_PERMISSION_REQ_FINE_LOC);
+        prefs = getPreferences(Context.MODE_PRIVATE);
+        editor = prefs.edit();
+        distances = new HashMap<>();
+        //Gets the triggered fences info from saved preferences. Refer to onDestroy() for writing the info
+        triggeredFences = new HashMap<>();
+        Set<String> tempSet = prefs.getStringSet("triggered_fence_names", null);
+        if(tempSet!=null){
+            for(String name: tempSet){
+                triggeredFences.put(name, prefs.getInt(name, 0));
+            }
+        }
+
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_item_list);
+
 
         //ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.INTERNET}, PackageManager.PERMISSION_GRANTED);
         textView = findViewById(R.id.textView);
@@ -310,6 +353,7 @@ public class ItemListActivity extends AppCompatActivity {
 
         //initialize location client
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+        startLocationUpdates();
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             fusedLocationProviderClient.getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
                 @Override
@@ -373,23 +417,20 @@ public class ItemListActivity extends AppCompatActivity {
         geofenceClientStarted = false;
 
 
-        distances = new HashMap<>();
-        triggeredFences = new HashMap<>();
+
+
         //populate landmarks list
         //TODO fill in remaining buildings
         //TODO find the rest of building capacities, using 200 as default rn
         landmarks = new HashMap<>();
         //format for landmarks is: lat, lang, radius, max capacity
-        //TODO GET RID OF TEST VARIABLES
-        //Double[] pool = {39.98839498, -83.02861959, 80.0, 200.0};
-        //landmarks.put("pool", pool);
 
         //actual landmarks
         landmarks.put("Dreese Lab", new Double[]{40.00234558, -83.01599023, 33.02755, 200.0});
         landmarks.put("Baker Systems Engineering", new Double[]{40.00168193, -83.01597146, 48.6623, 200.0});
         landmarks.put("Journalism Building", new Double[]{40.00200682, -83.01500711, 37.3767, 200.0});
         landmarks.put("Caldwell Lab", new Double[]{40.00128333, -83.01490930, 38.3341, 200.0});
-        landmarks.put("Smith Lab", new Double[]{40.002110, -83.013190, 52.4051, 200.0});
+        landmarks.put("Bolz Hall", new Double[]{40.002650, -83.015520, 55.6, 200.0});
         landmarks.put("McPherson Chemical Lab", new Double[]{40.00228419, -83.01417563, 58.603, 200.0});
         landmarks.put("Hitchcock Hall", new Double[]{40.00364845, -83.01521900, 44.0233, 200.0});
         landmarks.put("Physics Research Building", new Double[]{40.00338546, -83.01418635, 66.2825, 200.0});
@@ -397,7 +438,7 @@ public class ItemListActivity extends AppCompatActivity {
         landmarks.put("18th Avenue Library", new Double[]{40.001653210743655, -83.01333614846641, 33.3, 200.0});
         landmarks.put("Stillman Hall", new Double[]{40.00186177473543, -83.01099075409095, 36.11, 200.0});
         landmarks.put("OSU RPAC", new Double[]{39.99952150365391, -83.01845802398842, 73.05, 200.0});
-        landmarks.put("Bolz Hall", new Double[]{40.002650, -83.015520, 55.6, 200.0});
+        landmarks.put("Smith Lab", new Double[]{40.002110, -83.013190, 52.4051, 200.0});
         landmarks.put("Knowlton Hall", new Double[]{40.00362508073249, -83.01683446552049, 75.5, 200.0});
         //landmarks.put("", new Double[]{});
         //populate capacity variable
@@ -409,7 +450,7 @@ public class ItemListActivity extends AppCompatActivity {
             simpleItemRecyclerViewAdapter.updateCapacity(entry, cap);
             //Log.d("refreshButton", "got value: " + getCurrentBuildingCapacity(entry));
         }
-
+        simpleItemRecyclerViewAdapter.notifyDataSetChanged();
         //okay so here we need to populate the geofenceList. I want to do this in a new thread that we can put to sleep and wake up
         geofenceList = new ArrayList<>();
         //getCloseLandmarks = new locThread();
@@ -458,7 +499,7 @@ public class ItemListActivity extends AppCompatActivity {
                 ArrayList<String> removeList = new ArrayList<>();
                 while (latitude == 0.0 && longitude == 0) {
                     //wait for new location
-                    if (ActivityCompat.checkSelfPermission(fusedLocationProviderClient.getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(fusedLocationProviderClient.getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    if (ActivityCompat.checkSelfPermission(fusedLocationProviderClient.getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                         // TODO: Consider calling
                         //    ActivityCompat#requestPermissions
                         // here to request the missing permissions, and then overriding
@@ -467,10 +508,16 @@ public class ItemListActivity extends AppCompatActivity {
                         // to handle the case where the user grants the permission. See the documentation
                         // for ActivityCompat#requestPermissions for more details.
                         //return;
-                        //initPermissionsCheck(Manifest.permission.ACCESS_FINE_LOCATION, MY_PERMISSION_REQ_FINE_LOC);
+                        initPermissionsCheck(Manifest.permission.ACCESS_FINE_LOCATION, MY_PERMISSION_REQ_FINE_LOC);
                         //initPermissionsCheck(Manifest.permission.ACCESS_FINE_LOCATION, MY_PERMISSION_REQ_BACK_LOC);
-                        Log.i("req permissions", "");
+                        //Log.i("req permissions", "");
                         //ActivityCompat.requestPermissions(fusedLocationProviderClient.getApplicationContext(), perms, MY_REQ_CODE);
+
+                    }
+                    try {
+                        wait(500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
                     fusedLocationProviderClient.getLastLocation();
                 }
@@ -792,10 +839,15 @@ public class ItemListActivity extends AppCompatActivity {
             }
             geofencingClient.removeGeofences(list);
             geofenceList.removeAll(list);
+
         }catch (Exception e){
 
         }
-
+        editor.putStringSet("triggered_fence_names", triggeredFences.keySet());
+        for(Map.Entry entry: triggeredFences.entrySet()){
+            editor.putInt((String)entry.getKey(), (int)entry.getValue());
+        }
+        editor.apply();
         super.onDestroy();
     }
 
