@@ -299,6 +299,7 @@ public class ItemListActivity extends AppCompatActivity {
             }
             //currently unused action for "UPDATE_CAPACITY"
         }
+        //
     };
 
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -430,16 +431,16 @@ public class ItemListActivity extends AppCompatActivity {
         landmarks.put("Baker Systems Engineering", new Double[]{40.00168193, -83.01597146, 48.6623, 200.0});
         landmarks.put("Journalism Building", new Double[]{40.00200682, -83.01500711, 37.3767, 200.0});
         landmarks.put("Caldwell Lab", new Double[]{40.00128333, -83.01490930, 38.3341, 200.0});
-        landmarks.put("Bolz Hall", new Double[]{40.002650, -83.015520, 55.6, 200.0});
+        landmarks.put("Bolz Hall", new Double[]{40.002997, -83.015094, 55.6, 200.0});
         landmarks.put("McPherson Chemical Lab", new Double[]{40.00228419, -83.01417563, 58.603, 200.0});
-        landmarks.put("Hitchcock Hall", new Double[]{40.00364845, -83.01521900, 44.0233, 200.0});
+        landmarks.put("Hitchcock Hall", new Double[]{40.003654, -83.015250, 44.0233, 200.0});
         landmarks.put("Physics Research Building", new Double[]{40.00338546, -83.01418635, 66.2825, 200.0});
         landmarks.put("Thompson Library", new Double[]{39.99930265993615, -83.01487305423194, 55.5, 200.0});
         landmarks.put("18th Avenue Library", new Double[]{40.001653210743655, -83.01333614846641, 33.3, 200.0});
         landmarks.put("Stillman Hall", new Double[]{40.00186177473543, -83.01099075409095, 36.11, 200.0});
         landmarks.put("OSU RPAC", new Double[]{39.99952150365391, -83.01845802398842, 73.05, 200.0});
         landmarks.put("Smith Lab", new Double[]{40.002110, -83.013190, 52.4051, 200.0});
-        landmarks.put("Knowlton Hall", new Double[]{40.00362508073249, -83.01683446552049, 75.5, 200.0});
+        landmarks.put("Knowlton Hall", new Double[]{40.003638, -83.016818, 75.5, 200.0});
         //landmarks.put("", new Double[]{});
         //populate capacity variable
         //TODO update list from server data
@@ -494,6 +495,46 @@ public class ItemListActivity extends AppCompatActivity {
             @RequiresApi(api = Build.VERSION_CODES.N)
             @Override
             public void run() {
+
+                for (Map.Entry<String, Double[]> entry : landmarks.entrySet()) {
+                    Double[] latlngrad = entry.getValue();
+                    //check if building is within ~500 m of user
+                    Double distance = Distance(latitude, latlngrad[0], longitude, latlngrad[1], 0.0, 0.0);
+                    if (distances.containsKey(entry.getKey())) {
+                        distances.replace(entry.getKey(), distance);
+                    } else {
+                        distances.put(entry.getKey(), distance);
+                    }
+                }
+            }
+
+
+        }, 50, 5000);
+        myTimer.schedule(new TimerTask() {
+
+            public double Distance(double lat1, double lat2, double lon1,
+                                   double lon2, double el1, double el2) {
+
+                final int R = 6371000; // Radius of the earth
+
+                double latDistance = Math.toRadians(lat2 - lat1);
+                double lonDistance = Math.toRadians(lon2 - lon1);
+                double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                        + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                        * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+                double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                double distance = R * c; // convert to meters
+
+                //double height = el1 - el2;
+
+                //distance = Math.pow(distance, 2) + Math.pow(height, 2);
+
+                return distance;
+            }
+
+            @RequiresApi(api = Build.VERSION_CODES.N)
+            @Override
+            public void run() {
                 Log.i("Timer: ", "Starting loc thread, " + Double.toString(latitude) + " " + Double.toString(longitude));
                 ArrayList<Geofence> tempList = new ArrayList<>();
                 ArrayList<String> removeList = new ArrayList<>();
@@ -512,23 +553,29 @@ public class ItemListActivity extends AppCompatActivity {
                         //initPermissionsCheck(Manifest.permission.ACCESS_FINE_LOCATION, MY_PERMISSION_REQ_BACK_LOC);
                         //Log.i("req permissions", "");
                         //ActivityCompat.requestPermissions(fusedLocationProviderClient.getApplicationContext(), perms, MY_REQ_CODE);
-
+                    }else{
+                        try {
+                            wait(500);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        fusedLocationProviderClient.getLastLocation();
                     }
-                    try {
-                        wait(500);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    fusedLocationProviderClient.getLastLocation();
                 }
                 for (Map.Entry<String, Double[]> entry : landmarks.entrySet()) {
                     Double[] latlngrad = entry.getValue();
                     //check if building is within ~500 m of user
-                    Double distance = Distance(latitude, latlngrad[0], longitude, latlngrad[1], 0.0, 0.0);
+
+                    Double distance;
+                    // //= Distance(latitude, latlngrad[0], longitude, latlngrad[1], 0.0, 0.0);/*
                     if(distances.containsKey(entry.getKey())){
-                        distances.replace(entry.getKey(), distance);
+                        distance = distances.get(entry.getKey());
+                        //distances.replace(entry.getKey(), distance);
                     }else{
-                        distances.put(entry.getKey(), distance);
+                        distance = Distance(latitude, latlngrad[0], longitude, latlngrad[1], 0.0, 0.0);
+                        synchronized (distances){
+                            distances.put(entry.getKey(), distance);
+                        }
                     }
                     float rad = (float) (entry.getValue()[2].floatValue()+20);
                         /*
@@ -540,6 +587,7 @@ public class ItemListActivity extends AppCompatActivity {
                         }
 
                          */
+
 
                     Geofence temp = new Geofence.Builder()// Set the request ID of the geofence. This is a string to identify this
                             // geofence.
@@ -557,8 +605,8 @@ public class ItemListActivity extends AppCompatActivity {
                             .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_DWELL |
                                     Geofence.GEOFENCE_TRANSITION_EXIT | Geofence.GEOFENCE_TRANSITION_ENTER)
                             //set loitering delay in ms
-                            //TODO change this to a real value, set to 5s for testing
-                            .setLoiteringDelay(5000)
+                            //TODO change this to a real value, set to 8s for testing
+                            .setLoiteringDelay(20000)
                             // Create the geofence.
                             .build();
                     Log.i(entry.getKey(), Double.toString(distance));

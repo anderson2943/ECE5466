@@ -9,6 +9,7 @@ import android.util.Log;
 import com.google.android.gms.location.LocationResult;
 
 import java.util.List;
+import java.util.Map;
 
 public class LocationBackgroundManager extends BroadcastReceiver {
 
@@ -16,6 +17,14 @@ public class LocationBackgroundManager extends BroadcastReceiver {
             "com.google.android.gms.location.sample.locationupdatespendingintent.action" +
                     ".PROCESS_UPDATES";
 
+
+    private volatile Map<String, Double> distances;
+    /*
+    public LocationBackgroundManager(Map<String, Double> distancesArray){
+        distances = distancesArray;
+    }
+
+     */
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -25,6 +34,7 @@ public class LocationBackgroundManager extends BroadcastReceiver {
                 LocationResult result = LocationResult.extractResult(intent);
                 if (result != null) {
                     List<Location> locations = result.getLocations();
+
                     //Utils.setLocationUpdatesResult(context, locations);
                     //Utils.sendNotification(context, Utils.getLocationResultTitle(context, locations));
                     //Log.i(TAG, Utils.getLocationUpdatesResult(context));

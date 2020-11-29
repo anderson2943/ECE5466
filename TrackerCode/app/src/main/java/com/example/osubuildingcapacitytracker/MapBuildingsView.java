@@ -129,7 +129,7 @@ public class MapBuildingsView extends FragmentActivity implements OnMapReadyCall
         mMap.addMarker(mcphersonChem);
         builder.include(mcphersonChemPoint);
 
-        LatLng hitchcockHallPoint = new LatLng(40.003799, -83.016029);
+        LatLng hitchcockHallPoint = new LatLng(40.003654, -83.015250);
         MarkerOptions hitchcockHall = new MarkerOptions().position(hitchcockHallPoint).title("Hitchcock Hall").snippet(capacity.get("Hitchcock Hall") + " out of 200");
         mMap.addMarker(hitchcockHall);
         builder.include(hitchcockHallPoint);
@@ -159,12 +159,12 @@ public class MapBuildingsView extends FragmentActivity implements OnMapReadyCall
         mMap.addMarker(rpac);
         builder.include(rpacPoint);
 
-        LatLng bolzHallPoint = new LatLng(40.002650, -83.015520);
+        LatLng bolzHallPoint = new LatLng(40.002997, -83.015094);
         MarkerOptions bolzHall = new MarkerOptions().position(bolzHallPoint).title("Bolz Hall").snippet(capacity.get("Bolz Hall") + " out of 200");
         mMap.addMarker(bolzHall);
         builder.include(bolzHallPoint);
 
-        LatLng knowltonHallPoint = new LatLng(40.004010, -83.016080);
+        LatLng knowltonHallPoint = new LatLng(40.003638, -83.016818);
         MarkerOptions knowltonHall = new MarkerOptions().position(knowltonHallPoint).title("Knowlton Hall").snippet(capacity.get("Knowlton Hall") + " out of 200");
         mMap.addMarker(knowltonHall);
         builder.include(knowltonHallPoint);
