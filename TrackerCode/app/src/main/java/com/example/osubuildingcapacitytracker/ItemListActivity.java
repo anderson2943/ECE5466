@@ -66,12 +66,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 /**
- * An activity representing a list of Items. This activity
- * has different presentations for handset and tablet-size devices. On
- * handsets, the activity presents a list of items, which when touched,
- * lead to a {@link ItemDetailActivity} representing
- * item details. On tablets, the activity presents the list of items and
- * item details side-by-side using two vertical panes.
+ * ECE 5466 Group 4 Final Project
+ * OSU Building Capacity Tracker
  */
 public class ItemListActivity extends AppCompatActivity {
 
@@ -185,9 +181,9 @@ public class ItemListActivity extends AppCompatActivity {
                                 Log.i("Incrementing ",(String)entry.getKey());
                                 //new closest building!
                                 triggeredFences.replace((String) entry.getKey(), new Integer(1));
-                                //TODO increment server cap for entry.getKey() or closestBuilding, they should be strings of the same thing
+
                                 updateServerCapacity((String) entry.getKey(), 1);
-                                //TODO then pull capacity data from server and do the following lines OR we do one big update at the end
+
                                 int newCap = getCurrentBuildingCapacity((String) entry.getKey());
                                 simpleItemRecyclerViewAdapter.updateCapacity((String) entry.getKey(), newCap);
                                 capacity.replace(closestBuilding,newCap);
@@ -202,9 +198,9 @@ public class ItemListActivity extends AppCompatActivity {
                                 Log.i("Decrementing ",(String)entry.getKey());
                                 //fence already has 1 there, decrement the cap
                                 triggeredFences.replace((String) entry.getKey(), new Integer(0));
-                                //TODO decrement server cap for entry.getKey()
+
                                 updateServerCapacity((String) entry.getKey(), -1);
-                                //TODO pull capacity data from server and do the following lines OR we do one big update at the end
+
                                 int newCap = getCurrentBuildingCapacity((String) entry.getKey());
                                 simpleItemRecyclerViewAdapter.updateCapacity((String) entry.getKey(), newCap);
                                 capacity.replace((String)entry.getKey(),newCap);
@@ -221,9 +217,9 @@ public class ItemListActivity extends AppCompatActivity {
                     Log.i("fence: ", loc);
                     if(triggeredFences.get(loc).equals(0)){ //value was zero, so we change it to 1 and increment
                         triggeredFences.replace(loc, new Integer(1));
-                        //TODO increment server cap for entry.getKey() or closestBuilding, they should be strings of the same thing
+
                         updateServerCapacity(loc, 1);
-                        //TODO then pull capacity data from server and do the following lines OR we do one big update at the end
+
                         int newCap = getCurrentBuildingCapacity(loc);
                         simpleItemRecyclerViewAdapter.updateCapacity(loc, newCap);
                         capacity.replace(loc,newCap);
@@ -263,11 +259,9 @@ public class ItemListActivity extends AppCompatActivity {
                         }
                         Log.i("Incrementing ",closestBuilding);
                         triggeredFences.replace(closestBuilding, new Integer(1));
-                        //TODO decrement server for loc
+
                         updateServerCapacity(loc, -1);
-                        //TODO increment server for closestBuilding
                         updateServerCapacity(closestBuilding, 1);
-                        //TODO then pull capacity data from server for BOTH loc and closestBuilding and do the following lines OR we do one big update at the end
                         int newCapLoc = getCurrentBuildingCapacity(loc);
                         int newCapClosest = getCurrentBuildingCapacity(closestBuilding);
                         capacity.replace(loc,newCapLoc);
@@ -278,19 +272,15 @@ public class ItemListActivity extends AppCompatActivity {
 
                     } else if(triggeredFences.size() ==1){
                         if (triggeredFences.get(loc).equals(new Integer(1))) { //only one entry, decrement sever for loc
-                            //the line below must go after this if check, otherwise we will get an error. But we could place it after the next else
-                            //triggeredFences.remove(loc);
-                            //TODO decrement server for loc
+
                             Log.i("Decrementing ",loc);
                             updateServerCapacity(loc, -1);
-                            //TODO then pull capacity data from server for loc and do the following lines OR we do one big update at the end
                             int newCapLoc = getCurrentBuildingCapacity(loc);
                             simpleItemRecyclerViewAdapter.updateCapacity(loc, newCapLoc);
                             capacity.replace(loc,newCapLoc);
                             simpleItemRecyclerViewAdapter.notifyDataSetChanged();
 
                         } else {
-                            //triggeredFences.remove(loc);
                             //the value was already zero, so we really don't care (nothing to do with server)
                         }
                     }
@@ -311,12 +301,8 @@ public class ItemListActivity extends AppCompatActivity {
         }else{
             ActivityCompat.requestPermissions(this, perms, MY_PERMISSION_REQ_FINE_LOC);
         }
-
-
         //check initial permissions are granted
-        //initPermissionsCheck(); was checking really often...
-        //initPermissionsCheck(Manifest.permission.ACCESS_BACKGROUND_LOCATION, MY_PERMISSION_REQ_BACK_LOC);
-        //initPermissionsCheck(Manifest.permission.ACCESS_FINE_LOCATION, MY_PERMISSION_REQ_FINE_LOC);
+
         prefs = getPreferences(Context.MODE_PRIVATE);
         editor = prefs.edit();
         distances = new HashMap<>();
@@ -394,13 +380,7 @@ public class ItemListActivity extends AppCompatActivity {
         toolbar.setTitle(getTitle());
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        /*fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });*/
+
 
         if (findViewById(R.id.item_detail_container) != null) {
             // The detail container view will be present only in the
@@ -443,7 +423,7 @@ public class ItemListActivity extends AppCompatActivity {
         landmarks.put("Knowlton Hall", new Double[]{40.003638, -83.016818, 75.5, 200.0});
         //landmarks.put("", new Double[]{});
         //populate capacity variable
-        //TODO update list from server data
+
         capacity = new HashMap<>();
         for (String entry : landmarks.keySet()) {
             int cap = getCurrentBuildingCapacity(entry);
@@ -452,30 +432,32 @@ public class ItemListActivity extends AppCompatActivity {
             //Log.d("refreshButton", "got value: " + getCurrentBuildingCapacity(entry));
         }
         simpleItemRecyclerViewAdapter.notifyDataSetChanged();
-        //okay so here we need to populate the geofenceList. I want to do this in a new thread that we can put to sleep and wake up
+
         geofenceList = new ArrayList<>();
-        //getCloseLandmarks = new locThread();
+
 
         //register receiver
         IntentFilter filter = new IntentFilter("UPDATE_DWELL");
         filter.addAction("UPDATE_EXIT");
         filter.addAction("UPDATE_ENTER");
-        registerReceiver(textBroadcastReceiver, filter);
+        try {
+            registerReceiver(textBroadcastReceiver, filter);
+        }catch (Exception e){
+            Log.e("RegisterReceiver: ", e.toString());
+        }
 
         //initialize geofencing client
         geofencingClient = LocationServices.getGeofencingClient(this);
-        //startlocationupdates() moved to onStart() method
-        //initPermissionsCheck(Manifest.permission.ACCESS_BACKGROUND_LOCATION, MY_PERMISSION_REQ_BACK_LOC);
 
         //end of thread declaration
         //start the thread
         myTimer = new Timer();
         myTimer.schedule(new TimerTask() {
-
+            //formula based on the Haversine formula
             public double Distance(double lat1, double lat2, double lon1,
-                                   double lon2, double el1, double el2) {
+                                   double lon2) {
 
-                final int R = 6371000; // Radius of the earth
+                final int R = 6371000;
 
                 double latDistance = Math.toRadians(lat2 - lat1);
                 double lonDistance = Math.toRadians(lon2 - lon1);
@@ -483,11 +465,7 @@ public class ItemListActivity extends AppCompatActivity {
                         + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
                         * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
                 double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                double distance = R * c; // convert to meters
-
-                //double height = el1 - el2;
-
-                //distance = Math.pow(distance, 2) + Math.pow(height, 2);
+                double distance = R * c;
 
                 return distance;
             }
@@ -499,7 +477,7 @@ public class ItemListActivity extends AppCompatActivity {
                 for (Map.Entry<String, Double[]> entry : landmarks.entrySet()) {
                     Double[] latlngrad = entry.getValue();
                     //check if building is within ~500 m of user
-                    Double distance = Distance(latitude, latlngrad[0], longitude, latlngrad[1], 0.0, 0.0);
+                    Double distance = Distance(latitude, latlngrad[0], longitude, latlngrad[1]);
                     if (distances.containsKey(entry.getKey())) {
                         distances.replace(entry.getKey(), distance);
                     } else {
@@ -512,10 +490,12 @@ public class ItemListActivity extends AppCompatActivity {
         }, 50, 5000);
         myTimer.schedule(new TimerTask() {
 
+            //formula based on the Haversine formula
+            //https://en.wikipedia.org/wiki/Haversine_formula
             public double Distance(double lat1, double lat2, double lon1,
-                                   double lon2, double el1, double el2) {
+                                   double lon2) {
 
-                final int R = 6371000; // Radius of the earth
+                final int R = 6371000;
 
                 double latDistance = Math.toRadians(lat2 - lat1);
                 double lonDistance = Math.toRadians(lon2 - lon1);
@@ -523,11 +503,7 @@ public class ItemListActivity extends AppCompatActivity {
                         + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
                         * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
                 double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                double distance = R * c; // convert to meters
-
-                //double height = el1 - el2;
-
-                //distance = Math.pow(distance, 2) + Math.pow(height, 2);
+                double distance = R * c;
 
                 return distance;
             }
@@ -541,18 +517,8 @@ public class ItemListActivity extends AppCompatActivity {
                 while (latitude == 0.0 && longitude == 0) {
                     //wait for new location
                     if (ActivityCompat.checkSelfPermission(fusedLocationProviderClient.getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                        // TODO: Consider calling
-                        //    ActivityCompat#requestPermissions
-                        // here to request the missing permissions, and then overriding
-                        //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                        //                                          int[] grantResults)
-                        // to handle the case where the user grants the permission. See the documentation
-                        // for ActivityCompat#requestPermissions for more details.
-                        //return;
+
                         initPermissionsCheck(Manifest.permission.ACCESS_FINE_LOCATION, MY_PERMISSION_REQ_FINE_LOC);
-                        //initPermissionsCheck(Manifest.permission.ACCESS_FINE_LOCATION, MY_PERMISSION_REQ_BACK_LOC);
-                        //Log.i("req permissions", "");
-                        //ActivityCompat.requestPermissions(fusedLocationProviderClient.getApplicationContext(), perms, MY_REQ_CODE);
                     }else{
                         try {
                             wait(500);
@@ -567,27 +533,17 @@ public class ItemListActivity extends AppCompatActivity {
                     //check if building is within ~500 m of user
 
                     Double distance;
-                    // //= Distance(latitude, latlngrad[0], longitude, latlngrad[1], 0.0, 0.0);/*
+
                     if(distances.containsKey(entry.getKey())){
                         distance = distances.get(entry.getKey());
                         //distances.replace(entry.getKey(), distance);
                     }else{
-                        distance = Distance(latitude, latlngrad[0], longitude, latlngrad[1], 0.0, 0.0);
+                        distance = Distance(latitude, latlngrad[0], longitude, latlngrad[1]);
                         synchronized (distances){
                             distances.put(entry.getKey(), distance);
                         }
                     }
                     float rad = (float) (entry.getValue()[2].floatValue()+20);
-                        /*
-                        if(accuracy<=rad&&rad>50){
-                            //Log.i("increasing radius", "from: "+Float.toString(rad)+"to "+Double.toString(rad+accuracy));
-                            rad += accuracy;
-                        }else{
-                            rad += 3*accuracy;
-                        }
-
-                         */
-
 
                     Geofence temp = new Geofence.Builder()// Set the request ID of the geofence. This is a string to identify this
                             // geofence.
@@ -597,7 +553,7 @@ public class ItemListActivity extends AppCompatActivity {
                             .setCircularRegion(
                                     latlngrad[0], latlngrad[1], rad
                             )
-                            //.setNotificationResponsiveness()
+
                             // Set the expiration duration of the geofence
                             .setExpirationDuration(Geofence.NEVER_EXPIRE)
 
@@ -605,7 +561,7 @@ public class ItemListActivity extends AppCompatActivity {
                             .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_DWELL |
                                     Geofence.GEOFENCE_TRANSITION_EXIT | Geofence.GEOFENCE_TRANSITION_ENTER)
                             //set loitering delay in ms
-                            //TODO change this to a real value, set to 8s for testing
+                            //TODO cconsider modifying this value, tests conducted at 8s and 20s.
                             .setLoiteringDelay(20000)
                             // Create the geofence.
                             .build();
@@ -627,18 +583,7 @@ public class ItemListActivity extends AppCompatActivity {
                 }//end of for loop
                 synchronized (geofenceList) {
                     Log.i("SyncGeofenceThread", tempList.toString());
-                    /*
-                    if(!geofenceList.isEmpty()){
-                        geofenceList.clear(); //clear the list and then populate it again. This could make a race condition so sync it
-                    }
 
-                     */
-
-                    //TODO get rid of test place
-                    //Geofence g = new Geofence.Builder().setRequestId("Building 2").setCircularRegion(39.988411,-83.028641,80).setExpirationDuration(Geofence.NEVER_EXPIRE)
-                    //        .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_DWELL | Geofence.GEOFENCE_TRANSITION_EXIT | Geofence.GEOFENCE_TRANSITION_ENTER).setLoiteringDelay(5000).build();
-                    //geofenceList.add(g);
-                   // geofenceList.addAll(tempList);
                     // remove fences here, add new ones
                     updateGeofences(removeList);
                 }//end of sync
@@ -651,7 +596,7 @@ public class ItemListActivity extends AppCompatActivity {
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     public void refresh(View view){
-        //ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.INTERNET}, MY_REQ_CODE);
+
         textView = findViewById(R.id.textView);
         if(connection==null){
             Toast t = Toast.makeText(this, "Trying to reconnect...", Toast.LENGTH_SHORT);
@@ -682,7 +627,6 @@ public class ItemListActivity extends AppCompatActivity {
     public int getCurrentBuildingCapacity(String building){
         int cap;
         //added in a try to get connection again
-        //ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.INTERNET}, PackageManager.PERMISSION_GRANTED);
         textView = findViewById(R.id.textView);
 
         if (connection!=null){
@@ -766,12 +710,10 @@ public class ItemListActivity extends AppCompatActivity {
                 } else {
                     if(grantResults.length>0){
                         Log.i("onPermissionsResults: ", grantResults.toString());
-                        //Toast.makeText(getApplicationContext(), "This requires permissions to be granted", Toast.LENGTH_SHORT).show();
+                        //this line has been edited out, because we do'nt want the app to crash
                         //finish();
                     }
 
-                    //this line has been edited out, because we do'nt want the app to crash
-                    //
                 }
                 break;
         }
@@ -785,7 +727,6 @@ public class ItemListActivity extends AppCompatActivity {
                 Log.i("inside weird if"," idk why we are here");
             }
             // I think because there's the FLAG_UPDATE_CURRENT on the pending intent, it will just update fences if they already exist
-            //TODO get rid of the success listeners
             if(geofenceList.isEmpty()){
                 //an error will occur if the list is empty
                 return;
@@ -795,7 +736,6 @@ public class ItemListActivity extends AppCompatActivity {
                 geofencingClient.removeGeofences(removeList);
             }
 
-            //TODO make sure this isnt re-adding geofences that we already have
             geofencingClient.addGeofences(getGeofencingRequest(), getGeofencePendingIntent())
                     .addOnSuccessListener(this, new OnSuccessListener<Void>() {
                         @Override
@@ -830,7 +770,6 @@ public class ItemListActivity extends AppCompatActivity {
             }
         }
         //added in a check to see if client has been started already
-        //updateGeofences();
         //print
         Log.d("StartUpdates: ", "Updates started");
     }
@@ -862,7 +801,7 @@ public class ItemListActivity extends AppCompatActivity {
 
     @Override
     protected void onPause() {
-        unregisterReceiver(textBroadcastReceiver);
+        //unregisterReceiver(textBroadcastReceiver);
         super.onPause();
     }
 
@@ -935,8 +874,6 @@ public class ItemListActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerView(@NonNull RecyclerView recyclerView) {
-        //layoutManager = new LinearLayoutManager(recyclerView.getContext());
-        //recyclerView.setLayoutManager(layoutManager);
         simpleItemRecyclerViewAdapter = new SimpleItemRecyclerViewAdapter(this, dummyContent.ITEMS, mTwoPane);
         recyclerView.setAdapter(simpleItemRecyclerViewAdapter);
     }
@@ -1009,26 +946,12 @@ public class ItemListActivity extends AppCompatActivity {
             //holder.mContentView.setText(mValues.get(position).getCapacity().toString());
             holder.mContentView.setText(mValues.get(position).getInfo());
             holder.mIdView.setText(mValues.get(position).getPercent());
-            //Object[] holderPos = {holder, new Integer(position)};
-
-            //Log.i("BindViewHolder", "Inside onbindviewholder");
-           /* if(viewHolders!=null && viewHolders.size()<mValues.size()){
-                viewHolders.put(mValues.get(position).toString(), holderPos);
-                Log.i("BindViewHolder", "adding holder to viewholders");
-            }
-            else{
-                if()
-                //viewHolders = new HashMap<>();
-                viewHolders.put(mValues.get(position).toString(), holderPos);
-            }
-
-             */
 
             holder.itemView.setTag(mValues.get(position));
             holder.itemView.setOnClickListener(mOnClickListener);
 
         }
-        //private Boolean holderAdded(final ViewHolder holder){        }
+
 
         @Override
         public int getItemCount() {
