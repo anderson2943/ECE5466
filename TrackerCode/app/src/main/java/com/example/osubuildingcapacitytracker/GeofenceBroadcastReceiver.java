@@ -67,9 +67,7 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                 }
             }
 
-            // Send notification and log the transition details.
-            //sendNotification(geofenceTransitionDetails);
-            //
+
         }
 
     }

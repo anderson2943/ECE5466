@@ -12,20 +12,14 @@ import java.util.Map;
 /**
  * Helper class for providing sample content for user interfaces created by
  * Android template wizards.
- * <p>
- * TODO: Replace all uses of this class before publishing your app.
+ * Modified by Katie Eismann, Jamey Weyenberg and Erik Anderson
  */
 public class DummyContent {
 
-    /**
-     * An array of sample (dummy) items.
-     */
     public static final List<DummyItem> ITEMS = new ArrayList<DummyItem>();
 
     public static final Map<String, DummyItem> ITEM_NAME_MAP = new HashMap<String, DummyItem>();
-    /**
-     * A map of sample (dummy) items, by ID.
-     */
+
     public static final Map<String, DummyItem> ITEM_MAP = new HashMap<String, DummyItem>();
 
     private static final int COUNT = 5;

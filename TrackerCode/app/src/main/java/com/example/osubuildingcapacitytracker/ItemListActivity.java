@@ -68,6 +68,7 @@ import java.util.TimerTask;
 /**
  * ECE 5466 Group 4 Final Project
  * OSU Building Capacity Tracker
+ * Created by Jamey Weyenberg, Erik Anderson and Katie Eismann
  */
 public class ItemListActivity extends AppCompatActivity {
 
@@ -318,8 +319,6 @@ public class ItemListActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_item_list);
 
-
-        //ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.INTERNET}, PackageManager.PERMISSION_GRANTED);
         textView = findViewById(R.id.textView);
 
         locationCallback = new LocationCallback() {
